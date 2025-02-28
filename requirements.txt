@@ -24,9 +24,9 @@ typing_extensions==4.12.2
 urllib3==2.3.0
 Werkzeug==3.0.6
 zipp==3.21.0
+gunicorn==21.2.0  # For production deployment
 
 # dash==2.13.0
 # dash-bootstrap-components==1.5.0
 # plotly==5.18.0
 # pandas==2.1.1
-# gunicorn==21.2.0  # For production deployment

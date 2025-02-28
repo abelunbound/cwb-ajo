@@ -144,6 +144,8 @@ app = dash.Dash(
     use_pages=True,  # Enable pages
     meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}]
 )
+server = app.server  # Expose the Flask server
+
 
 # Define colors for global use
 colors = {
@@ -332,5 +334,9 @@ def display_page(pathname, session_data, error_data):
 import callbacks
 
 # For development
+
 if __name__ == '__main__':
     app.run_server(debug=True, use_reloader=True)
+else:
+    # This branch is used by App Engine
+    server = app.server

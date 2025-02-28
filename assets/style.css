@@ -1,0 +1,760 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #F5F5F5;
+    color: #545454;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.header {
+    background-color: #FFFFFF;
+    padding: 15px 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: 700;
+    color: #5F2EEA;
+    text-decoration: none;
+}
+
+.logo span {
+    color: #333333;
+}
+
+.dashboard {
+    padding: 40px 0;
+}
+
+.dashboard-header {
+    margin-bottom: 30px;
+}
+
+.dashboard-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #333333;
+    margin-bottom: 10px;
+}
+
+.dashboard-subtitle {
+    color: #545454;
+    font-size: 16px;
+}
+
+.card {
+    background-color: #FFFFFF;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    padding: 25px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    height: 100%;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333333;
+    margin-bottom: 15px;
+}
+
+.card-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #5F2EEA;
+    margin-bottom: 5px;
+}
+
+.card-subtitle {
+    font-size: 14px;
+    color: #545454;
+}
+
+.progress-container {
+    margin-top: 15px;
+}
+
+.progress-details {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.progress-bar-container {
+    height: 8px;
+    background-color: #E0E0E0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-value {
+    height: 100%;
+    background-color: #5F2EEA;
+    border-radius: 4px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #333333;
+}
+
+.group-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.group-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.group-info h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333333;
+    margin-bottom: 5px;
+}
+
+.group-status {
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.status-active {
+    background-color: rgba(46, 204, 113, 0.15);
+    color: #2ECC71;
+}
+
+.members-count {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    color: #545454;
+    margin-bottom: 15px;
+}
+
+.group-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.detail-item {
+    font-size: 14px;
+}
+
+.detail-label {
+    color: #545454;
+    margin-bottom: 5px;
+}
+
+.detail-value {
+    font-weight: 600;
+    color: #333333;
+}
+
+.member-avatars {
+    display: flex;
+    margin-bottom: 20px;
+}
+
+.avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background-color: #8A6EF3;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    margin-right: -10px;
+    border: 2px solid #FFFFFF;
+}
+
+.create-group {
+    background-color: #FFFFFF;
+    border: 2px dashed #E0E0E0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    cursor: pointer;
+    transition: all 0.3s;
+    height: 100%;
+}
+
+.create-group:hover {
+    border-color: #5F2EEA;
+}
+
+.create-group-text {
+    font-weight: 600;
+    color: #5F2EEA;
+}
+
+.activity-list {
+    background-color: #FFFFFF;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #E0E0E0;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(95, 46, 234, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-text {
+    margin-bottom: 5px;
+}
+
+.activity-text strong {
+    color: #333333;
+    font-weight: 600;
+}
+
+.activity-time {
+    font-size: 12px;
+    color: #999;
+}
+
+.activity-amount {
+    font-weight: 700;
+    color: #2ECC71;
+}
+
+.btn-primary {
+    background-color: #5F2EEA;
+    color: #FFFFFF;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #4A1FB8;
+}
+
+.btn-outline-primary {
+    background: transparent;
+    border: 1px solid #5F2EEA;
+    color: #5F2EEA;
+}
+
+.btn-outline-primary:hover {
+    background: #5F2EEA;
+    color: #FFFFFF;
+}
+
+/* Modal styling */
+.invited-member {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #E0E0E0;
+}
+
+.member-info {
+    display: flex;
+    align-items: center;
+}
+
+.member-name {
+    font-weight: 600;
+    margin-left: 10px;
+}
+
+.member-email {
+    font-size: 12px;
+    color: #6c757d;
+    margin-left: 10px;
+}
+
+.remove-btn {
+    background: none;
+    border: none;
+    color: #dc3545;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.schedule-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #E0E0E0;
+}
+
+.schedule-month {
+    font-weight: 600;
+}
+
+.schedule-recipient {
+    display: flex;
+    align-items: center;
+}
+
+.schedule-recipient .avatar {
+    margin-right: 10px;
+}
+
+.success-container {
+    text-align: center;
+    padding: 30px 20px;
+}
+
+.success-icon {
+    margin-bottom: 20px;
+}
+
+.success-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: #333333;
+}
+
+.success-message {
+    margin-bottom: 25px;
+    color: #545454;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .group-header-top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .group-meta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .group-meta div {
+        margin-bottom: 5px;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .section-header button {
+        margin-top: 10px;
+    }
+
+    /* profile.py */
+    .onboarding-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .step-title h4 {
+        font-size: 16px;
+    }
+    
+    .step-status {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .step-button {
+        margin-top: 10px;
+    }
+    
+    .profile-progress-details {
+        font-size: 14px;
+    }
+}
+
+
+/* for profile.py */
+
+/* Profile Onboarding Styles */
+
+/* Progress bar styles */
+.profile-progress-container {
+    margin-bottom: 2rem;
+}
+
+.profile-progress-details {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.profile-progress-percentage {
+    color: #5F2EEA;
+}
+
+.profile-progress-bar-container {
+    height: 10px;
+    background-color: #E0E0E0;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.profile-progress-value {
+    height: 100%;
+    background-color: #5F2EEA;
+    border-radius: 5px;
+    transition: width 0.6s ease;
+}
+
+/* Onboarding step card styles */
+.onboarding-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.onboarding-step-card {
+    background-color: #FFFFFF;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    padding: 25px;
+    transition: all 0.3s ease;
+    height: 100%;
+    border-left: 5px solid #E0E0E0;
+}
+
+.onboarding-step-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.onboarding-step-card.step-active {
+    border-left-color: #5F2EEA;
+}
+
+.onboarding-step-card.step-completed {
+    border-left-color: #2ECC71;
+}
+
+.step-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.step-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #F0F0F0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    position: relative;
+}
+
+.step-icon i {
+    font-size: 18px;
+    color: #545454;
+}
+
+.step-complete {
+    background-color: rgba(46, 204, 113, 0.15);
+}
+
+.step-complete i {
+    color: #2ECC71;
+}
+
+.step-check-icon {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #2ECC71;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.step-complete .step-check-icon {
+    opacity: 1;
+}
+
+.step-check-icon i {
+    font-size: 12px;
+    color: white;
+}
+
+.step-title {
+    flex: 1;
+    position: relative;
+}
+
+.step-title h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333333;
+    margin: 0;
+}
+
+.step-optional-badge {
+    position: absolute;
+    top: -5px;
+    right: 0;
+    font-size: 11px;
+    background-color: #F7B731;
+    color: #333333;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.step-description {
+    font-size: 14px;
+    color: #545454;
+    margin-bottom: 15px;
+}
+
+.step-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-text {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.step-content {
+    margin-top: 15px;
+}
+
+/* Verification section */
+.verified-email {
+    padding: 10px;
+    background-color: rgba(46, 204, 113, 0.1);
+    border-radius: 5px;
+}
+
+/* Group recommendation card */
+.group-recommendation-card {
+    transition: all 0.3s ease;
+    border-color: #E0E0E0 !important;
+}
+
+.group-recommendation-card:hover {
+    border-color: #5F2EEA !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* Profile review card */
+.profile-review-card {
+    background-color: #F9F9F9;
+}
+
+.review-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #E0E0E0;
+}
+
+.review-item:last-child {
+    border-bottom: none;
+}
+
+/* Responsive adjustments
+@media (max-width: 768px) {
+    .onboarding-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .step-title h4 {
+        font-size: 16px;
+    }
+    
+    .step-status {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .step-button {
+        margin-top: 10px;
+    }
+    
+    .profile-progress-details {
+        font-size: 14px;
+    }
+} */
+
+/* Profile Page Styles */
+
+/* Payment Methods Section */
+.payment-methods-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.payment-method-card {
+    background-color: #F9F9F9;
+    border: 1px solid #E0E0E0;
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.payment-method-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.payment-method-header i {
+    color: #5F2EEA;
+    font-size: 24px;
+}
+
+.payment-method-details {
+    flex-grow: 1;
+    margin-right: 20px;
+}
+
+.card-number {
+    font-weight: 600;
+    color: #333333;
+    margin-bottom: 5px;
+}
+
+.card-expiry {
+    color: #545454;
+    font-size: 14px;
+}
+
+/* Notification Preferences */
+.notification-preferences {
+    background-color: #F9F9F9;
+    border-radius: 10px;
+    padding: 25px;
+}
+
+.notification-group {
+    margin-bottom: 20px;
+}
+
+.notification-group h5 {
+    color: #333333;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.notification-group .form-check {
+    margin-bottom: 10px;
+}
+
+.notification-group .form-check-input {
+    margin-right: 10px;
+}
+
+.notification-group .form-check-label {
+    color: #545454;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .payment-method-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .payment-method-details {
+        margin-right: 0;
+        margin-bottom: 15px;
+    }
+
+    .notification-preferences {
+        padding: 15px;
+    }
+}
+
+/* Additional Profile Page Styles */
+.verification-badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+}
+
+.security-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.security-info i {
+    margin-right: 10px;
+    color: #5F2EEA;
+}

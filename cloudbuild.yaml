@@ -6,3 +6,5 @@ steps:
       - |
         gcloud app deploy --quiet
 timeout: '900s' # Optional: sets the timeout for the build process
+options:
+  logging: CLOUD_LOGGING_ONLY  # Added this line to fix the service account error

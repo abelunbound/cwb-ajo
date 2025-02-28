@@ -12,3 +12,7 @@ __pycache__/
 
 # Misc
 .DS_Store
+
+# GCloud
+y/
+y

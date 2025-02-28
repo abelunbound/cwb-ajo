@@ -1,0 +1,11 @@
+# .gcloudignore
+.git
+.gitignore
+.idea/
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+# GCloud
+y/
+y

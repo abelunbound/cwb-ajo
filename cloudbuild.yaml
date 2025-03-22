@@ -4,8 +4,11 @@ steps:
     args:
       - '-c'
       - |
-        pip freeze | grep -Fxvf requirements.txt - >> requirements.txt
-        cat requirements.txt
+        pip freeze > new-requirements.txt
+        cat new-requirements.txt >> requirements.txt  
+        sort -u requirements.txt -o requirements.txt  
+        cat requirements.txt 
+
 
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'

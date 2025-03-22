@@ -1,15 +1,4 @@
 steps:
-  - name: 'python:3.10'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        pip freeze > new-requirements.txt
-        cat new-requirements.txt >> requirements.txt  
-        sort -u requirements.txt -o requirements.txt  
-        cat requirements.txt 
-
-
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:

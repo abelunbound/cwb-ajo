@@ -1,5 +1,5 @@
 # app.yaml
-runtime: python39  # Using Python 3.9
+runtime: python310  # Using Python 3.10
 
 entrypoint: gunicorn -b :$PORT app:server
 

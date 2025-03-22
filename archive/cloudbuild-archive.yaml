@@ -1,12 +1,4 @@
 steps:
-  - name: 'python:3.10'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        pip freeze | grep -Fxvf requirements.txt - >> requirements.txt
-        cat requirements.txt
-
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:

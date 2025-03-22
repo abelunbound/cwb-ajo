@@ -8,9 +8,9 @@ from components.graph import affordability_df, timeline_fig
 # Register the page
 dash.register_page(
     __name__, 
-    path="/profile", 
-    title="Profile | Ajo", 
-    name="Profile"
+    path="/finhealth", 
+    title="Profile | Financial Health", 
+    name="Finhealth"
 )
 
 # Page header component
@@ -280,7 +280,7 @@ def create_security_card():
         ])
     )
 
-# # Notifications Card
+# Notifications Card
 # def create_notifications_card():
 #     return dbc.Card(
 #         dbc.CardBody([
@@ -426,22 +426,22 @@ def layout():
             # First Row: Personal Information
             html.Div(className="mb-4", children=[create_personal_info_card()]),
             
-            # Second Row: Timeline Cards
-            html.Div(className="mb-4", children=[create_timeline_cards()]),
+            # # Second Row: Timeline Cards
+            # html.Div(className="mb-4", children=[create_timeline_cards()]),
             
-            # Third Row: Account Settings
-            html.Div(className="mb-4", children=[
-                dbc.Row([
-                    dbc.Col(create_account_settings_card(), width=12)
-                ])
-            ]),
+            # # Third Row: Account Settings
+            # html.Div(className="mb-4", children=[
+            #     dbc.Row([
+            #         dbc.Col(create_account_settings_card(), width=12)
+            #     ])
+            # ]),
             
-            # Fourth Row: Security
-            html.Div(className="mb-4", children=[
-                dbc.Row([
-                    dbc.Col(create_security_card(), width=12)
-                ])
-            ]),
+            # # Fourth Row: Security
+            # html.Div(className="mb-4", children=[
+            #     dbc.Row([
+            #         dbc.Col(create_security_card(), width=12)
+            #     ])
+            # ]),
             
             # Fifth Row: Notifications
             html.Div(children=[

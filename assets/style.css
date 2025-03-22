@@ -758,3 +758,72 @@ body {
     margin-right: 10px;
     color: #5F2EEA;
 }
+
+
+.metrics-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.metric-card {
+    background-color: #f8fafc;
+    border-radius: 6px;
+    padding: 12px;
+    flex: 1;
+    min-width: 120px;
+}
+
+.metric-card p {
+    margin: 0 0 4px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.metric-card h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.warning {
+    border-left: 4px solid #dd6b20;
+}
+
+.danger {
+    border-left: 4px solid #e53e3e;;
+}
+
+.success {
+    border-left: 4px solid var(--success-color);
+}
+
+.card-afford {
+    background-color: var(--card-color);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    padding: 16px;
+    /* display: flex; */
+    flex-direction: column;
+    width: calc(25% - 30px);
+}
+
+.card-afford1 {
+    /* background-color: var(--card-color);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    padding: 16px; */
+    /* display: flex; */
+    /* flex-direction: column; */
+    /* width: calc(25% - 30px); */
+    width: 100%;
+}
+
+.card-afford2 {
+    
+    
+    display: flex;
+    /* flex-direction: column; */
+   
+}

@@ -210,6 +210,7 @@ def create_header():
                                             html.Li(html.A("My Groups", href="/groups", className="nav-link")),
                                             html.Li(html.A("Payments", href="/payments", className="nav-link")),
                                             html.Li(html.A("Support", href="/support", className="nav-link")),
+                                            html.Li(html.A("FinHealth", href="/finhealth", className="nav-link")),
                                         ]
                                     )
                                 ]
@@ -337,7 +338,11 @@ import callbacks
 # For development
 
 if __name__ == '__main__':
-    app.run_server(debug=True, use_reloader=True)
+    app.run_server(debug=True)
 else:
     # This branch is used by App Engine
     server = app.server
+
+# print("Registered pages:")
+# for page in dash.page_registry.values():
+#     print(page["module"], "→", page["path"])

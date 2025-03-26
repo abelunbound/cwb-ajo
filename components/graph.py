@@ -117,14 +117,14 @@ timeline_fig.add_trace(go.Scatter(
     name='Median Forecast'
 ))
 
-# Add actual balance line
-timeline_fig.add_trace(go.Scatter(
-    x=dates,
-    y=actual_range,
-    mode='lines',
-    line=dict(color='rgb(44, 160, 44)', width=2, dash='dot'),
-    name='Actual Balance'
-))
+# # Add actual balance line
+# timeline_fig.add_trace(go.Scatter(
+#     x=dates,
+#     y=actual_range,
+#     mode='lines',
+#     line=dict(color='rgb(44, 160, 44)', width=2, dash='dot'),
+#     name='Actual Balance'
+# ))
 
 # Add target line
 timeline_fig.add_trace(go.Scatter(
@@ -136,7 +136,8 @@ timeline_fig.add_trace(go.Scatter(
 ))
 
 timeline_fig.update_layout(
-    title='Balance Forecast Timeline (30 Days)',
+    # title='Balance Forecast Timeline (30 Days)',
+    margin=dict(t=10), 
     xaxis_title='Date',
     yaxis_title='Balance (£)',
     hovermode='x unified',

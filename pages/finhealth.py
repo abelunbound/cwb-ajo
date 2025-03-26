@@ -3,7 +3,7 @@ from dash import dcc, html, dash_table
 import dash_bootstrap_components as dbc
 
 
-from components.graph import affordability_df, timeline_fig
+from components.graph import affordability_df, timeline_fig, gauge_fig
 
 # Register the page
 dash.register_page(
@@ -95,29 +95,67 @@ def create_personal_info_card():
 # Extra - Affordability Card
 def create_notifications_card():
     return dbc.Card(
+        # dbc.CardHeader([html.H4("Tuition Affordability Assessment")]),
         dbc.CardBody([
             # html.H5("Notifications", className="card-title mb-3"),
-            html.Div([
-                html.H4("Tuition Affordability Assessment"),
-                html.Div([
-                    html.Div([
-                        html.P("Required Amount"),
-                        html.H3(affordability_df[affordability_df["Metric"] == "Required amount"]["Value"].iloc[0])
-                    ], className="metric-card"),
-                    html.Div([
-                        html.P("Assessment"),
-                        html.H3(affordability_df[affordability_df["Metric"] == "Assessment"]["Value"].iloc[0])
-                    ], className="metric-card warning"),
-                    html.Div([
-                        html.P("Buffer Amount"),
-                        html.H3(affordability_df[affordability_df["Metric"] == "Buffer amount (median forecast)"]["Value"].iloc[0])
-                    ], className="metric-card danger")
-                ], className="metrics-container")
-            ], className="card-afford"),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            html.Div([
+                                html.H4("Tuition Affordability Assessment"),
+                                html.Div([
+                                    html.Div([
+                                        html.P("Required Tuition Amount"),
+                                        html.H3(affordability_df[affordability_df["Metric"] == "Required amount"]["Value"].iloc[0])
+                                    ], className="metric-card"),
 
-            html.Div([
-                dcc.Graph(figure=timeline_fig)
-            ], className="card-afford1"),
+                                    html.Div([
+                                        html.P("Applicant Bank Balance"),
+                                        html.H3(affordability_df[affordability_df["Metric"] == "Required amount"]["Value"].iloc[0])
+                                    ], className="metric-card warning"),
+
+                                    html.Div([
+                                        html.P("Threshold met?"),
+                                        html.H3(affordability_df[affordability_df["Metric"] == "Assessment"]["Value"].iloc[0])
+                                    ], className="metric-card danger"),
+                                    html.Div([
+                                        html.P("Pending liability?"),
+                                        html.H3(affordability_df[affordability_df["Metric"] == "Assessment"]["Value"].iloc[0])
+                                    ], className="metric-card danger")
+
+                                ], className="metrics-container")
+                            ], className="card-afford"),
+                        ], md=3, xs=12
+                    ), 
+                    dbc.Col(
+                        [
+                            html.Div([
+                                html.Div([
+                                    dbc.RadioItems(
+                                        options=[
+                                            {"label": "Financial History (£)  – 12 Months", "value": "option1"}, 
+                                            {"label": "Volatility check  - 7-Day rolling standard deviation", "value": "option2"}
+                                        ],
+                                        id="radio-buttons-inline",
+                                        inline=True,
+                                        className="d-flex align-items-center gap-4"
+                                    ),
+                                ]),
+                                dcc.Graph(
+                                    figure=timeline_fig,
+                                    config={'displayModeBar': False},
+                                    )
+                                ], className="card-afford1"),
+                        ], md=9, xs=12
+                    )
+                ]
+                ),
+            dbc.Row(),
+
+            
+
+            
 
         ], className="card-afford2")
     )

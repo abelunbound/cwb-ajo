@@ -191,3 +191,69 @@ comparison_fig = px.bar(
     title='Balance Comparison'
 )
 comparison_fig.update_layout(height=250)
+
+
+
+
+#  Table 
+# Define the metrics to show
+show_metrics = [
+    "Forecast for 30 days later (median)", 
+    "Conservative forecast (10th percentile)", 
+    "Optimistic forecast (90th percentile)", 
+    "Actual final balance", 
+    "Forecast error",
+    "model_kwargs.cardinality.context_length",
+    "patience",
+
+]
+
+# Filter the DataFrame to only show rows where Metric is in the show_metrics list
+filtered_df = df[df['Metric'].isin(show_metrics)]
+
+model_table = dash_table.DataTable(
+    data=filtered_df.to_dict('records'),
+    columns=[
+        {"name": "Category", "id": "Category"}, 
+        {"name": "Metric", "id": "Metric"}, 
+        {"name": "Value", "id": "Value"}
+    ],
+    style_table={'overflowX': 'auto'},
+    style_cell={
+        'textAlign': 'left',
+        'padding': '10px',
+        'fontFamily': 'Arial'
+    },
+    style_header={
+        'backgroundColor': 'rgb(230, 230, 230)',
+        'fontWeight': 'bold',
+        'border': '1px solid black'
+    },
+    style_data_conditional=[
+        {
+            'if': {'row_index': 'odd'},
+            'backgroundColor': 'rgb(248, 248, 248)'
+        },
+        {
+            'if': {'filter_query': '{Category} = "Hyperparameter"'},
+            'backgroundColor': '#e6f7ff',
+            'borderTop': '1px solid #b3e0ff'
+        },
+        {
+            'if': {'filter_query': '{Category} = "Affordability"'},
+            'backgroundColor': '#fff2e6',
+            'borderTop': '1px solid #ffcc99'
+        },
+        {
+            'if': {'filter_query': '{Category} = "Forecast"'},
+            'backgroundColor': '#e6ffe6',
+            'borderTop': '1px solid #99ff99'
+        },
+        {
+            'if': {'filter_query': '{Category} = "Comparative"'},
+            'backgroundColor': '#f0e6ff',
+            'borderTop': '1px solid #cc99ff'
+        }
+    ],
+    style_as_list_view=True,
+)

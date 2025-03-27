@@ -792,7 +792,7 @@ body {
 }
 
 .danger {
-    border-left: 4px solid #e53e3e;;
+    border-left: 4px solid #e53e3e;
 }
 
 .success {
@@ -826,6 +826,6 @@ body {
     
     
     display: flex;
-    /* flex-direction: column; */
+    flex-direction: column;
    
 }

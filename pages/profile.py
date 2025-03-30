@@ -3,7 +3,6 @@ from dash import dcc, html, dash_table
 import dash_bootstrap_components as dbc
 
 
-from components.graph import affordability_df
 
 # Register the page
 dash.register_page(

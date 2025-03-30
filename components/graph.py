@@ -27,15 +27,16 @@ cwb_combined_rmse_table_name = 'cwb_combined_rmse' # Combined results for valida
 cwb_combined_rmse_df = retrieve_data_from_sql(cwb_combined_rmse_table_name)
 # Get data for only target applicant
 cwb_combined_rmse_df = cwb_combined_rmse_df.query(applicant_id_query)
-print(f"\n:::::Graph Page: Data frame with length: {len(cwb_combined_rmse_df)} retrieved from {cwb_combined_rmse_table_name}\n")
+print(f"\n:::::Graph Page: RMSE Data frame with length: {len(cwb_combined_rmse_df)} retrieved from {cwb_combined_rmse_table_name}\n")
 
 ### Get best RMSE quartile
 ### Get index of minimum RMSE in thirty_day_forecast
-# Convert column to integers
-# cwb_combined_rmse_df['thirty_day_forecast'] = cwb_combined_rmse_df['thirty_day_forecast'].astype(int)
 min_index = cwb_combined_rmse_df['thirty_day_forecast'].idxmin()
-# Get the corresponding quartile value
+# Get the corresponding quartile value for best RMSE
 quartile_with_best_rmse = cwb_combined_rmse_df.loc[min_index, 'quartiles']
+# value for best RMSE
+best_rmse_value = cwb_combined_rmse_df['thirty_day_forecast'].min()
+best_rmse_value = round(best_rmse_value)
 
 
 fin_history_enhanced_table_name = 'fin_history_enhanced' # Feature engineered data, applicant id, date, time etc
@@ -52,204 +53,35 @@ cwb_validation_forecasts_df = retrieve_data_from_sql(cwb_validation_forecasts_ta
 cwb_validation_forecasts_df = cwb_validation_forecasts_df.query(applicant_id_query).sort_values('date')
 print(f"\n:::::Graph Page: Data frame with length: {len(cwb_validation_forecasts_df)} retrieved from {cwb_validation_forecasts_table_name}\n")
 
+# Get MAPE & Forecast Accuracy using 'actual' and 'p90' columns
+mape = np.mean(np.abs((cwb_validation_forecasts_df['actual'] - cwb_validation_forecasts_df['p92']) / cwb_validation_forecasts_df['actual'])) * 100
+# mape = round(mape)
+forecast_accuracy = round(100-mape, 2)
+print(f"Calculating MAPE for Quartile with best RMSE:- {quartile_with_best_rmse }: {mape:.2f}%")
+print(f"Calculating Forecast Accuracy for Quartile with best RMSE:: {forecast_accuracy:.2f}%")
 
 # Then get the last entry 
 most_recent_balance = f"£{round(filtered_fin_history_df['balance'].iloc[-1])}"
 
 ########################################################## 
 
+# Hyperparameters and Results
+cwb_validation_assessment_table_name = 'cwb_validation_assessment' # Assessment and Hyperparameters for validation set
+
+cwb_validation_assessment_df = retrieve_data_from_sql(cwb_validation_assessment_table_name)
+cwb_validation_assessment_df = cwb_validation_assessment_df.query(applicant_id_query)
+
+
+# 
+cwb_exchange_rate_table_name = 'cwb_exchange_rate'
+get_cwb_exchange_rate_df = retrieve_data_from_sql(cwb_exchange_rate_table_name)
+get_cwb_exchange_rate_df = get_cwb_exchange_rate_df.query(applicant_id_query)
 
 
 
-# Sample data from the assessment
-data = {
-    "Category": [
-        "Hyperparameter", "Hyperparameter", "Hyperparameter", "Hyperparameter", "Hyperparameter",
-        "Hyperparameter", "Hyperparameter", "Hyperparameter", "Hyperparameter", "Hyperparameter",
-        "Hyperparameter", "Hyperparameter", "Hyperparameter", "Hyperparameter", "Hyperparameter",
-        "Hyperparameter", "Hyperparameter", "Hyperparameter", "Hyperparameter", "Hyperparameter",
-        "Affordability", "Affordability", "Affordability", "Affordability", "Affordability",
-        "Forecast", "Forecast", "Forecast", "Forecast", "Forecast",
-        "Comparative", "Comparative", "Comparative"
-    ],
-    "Metric": [
-        "lr", "model_kwargs.cardinality.context_length", "model_kwargs.cardinality.default_scale", 
-        "state.__init_args__", "state.beta", "dropout_rate", "embedding_dimension", "freq", 
-        "hidden_size", "lags_seq", "nonnegative_pred_samples", "num_feat_dynamic_real", 
-        "num_feat_static_cat", "num_feat_static_real", "num_layers", "num_parallel_samples", 
-        "prediction_length", "scaling", "patience", "weight_decay",
-        "Required amount", "Assessment", "Probability of meeting threshold", "Recommendation", "Buffer amount (median forecast)",
-        "Current balance", "Forecast for 30 days later (median)", "Conservative forecast (10th percentile)", 
-        "Optimistic forecast (90th percentile)", "Forecast range width",
-        "Actual final balance", "Forecast error", "Actual balance within 80% prediction interval"
-    ],
-    "Value": [
-        "0.001", "90", "", "*id001", "0.0", "0.1", "", "D", "40", "", "False", "12", "1", "1", 
-        "1", "100", "30", "False", "10", "1e-08",
-        "£16000.00", "Low confidence", "Under 50%", "Request additional financial guarantees", "£-698.67",
-        "£13813.30", "£15301.33", "£14555.34", "£16270.11", "£1714.77",
-        "£16258.10", "£956.77 (5.88%)", "True"
-    ],
-    "ExperimentID": ["exp_69"] * 33
-}
+
 
 # Convert to DataFrame
-df = pd.DataFrame(data)
-
-# Extract data for affordability analysis
-affordability_df = df[df["Category"] == "Affordability"]
-forecast_df = df[df["Category"] == "Forecast"]
-comparative_df = df[df["Category"] == "Comparative"]
-
-# # Extract numeric values for visualization
-# current_balance = float(forecast_df[forecast_df["Metric"] == "Current balance"]["Value"].iloc[0].replace("£", "").replace(",", ""))
-# forecast_median = float(forecast_df[forecast_df["Metric"] == "Forecast for 30 days later (median)"]["Value"].iloc[0].replace("£", "").replace(",", ""))
-# forecast_10th = float(forecast_df[forecast_df["Metric"] == "Conservative forecast (10th percentile)"]["Value"].iloc[0].replace("£", "").replace(",", ""))
-# forecast_90th = float(forecast_df[forecast_df["Metric"] == "Optimistic forecast (90th percentile)"]["Value"].iloc[0].replace("£", "").replace(",", ""))
-# actual_balance = float(comparative_df[comparative_df["Metric"] == "Actual final balance"]["Value"].iloc[0].replace("£", "").replace(",", ""))
-# required_amount = float(affordability_df[affordability_df["Metric"] == "Required amount"]["Value"].iloc[0].replace("£", "").replace(",", ""))
-
-# # Create forecast timeline data
-# dates = pd.date_range(start='2023-01-01', periods=31, freq='D')
-# forecast_range = np.linspace(current_balance, forecast_median, 31)
-# forecast_lower = np.linspace(current_balance, forecast_10th, 31)
-# forecast_upper = np.linspace(current_balance, forecast_90th, 31)
-# actual_range = np.linspace(current_balance, actual_balance, 31)
-
-# # Create gauge chart for affordability assessment
-# assessment_value = "Low" if affordability_df[affordability_df["Metric"] == "Assessment"]["Value"].iloc[0] == "Low confidence" else "High"
-# gauge_fig = go.Figure(go.Indicator(
-#     mode="gauge+number+delta",
-#     value=forecast_median,
-#     domain={'x': [0, 1], 'y': [0, 1]},
-#     title={'text': "Forecast vs Required Amount"},
-#     delta={'reference': required_amount, 'increasing': {'color': "green"}, 'decreasing': {'color': "red"}},
-#     gauge={
-#         'axis': {'range': [None, required_amount * 1.2]},
-#         'bar': {'color': "#1f77b4"},
-#         'steps': [
-#             {'range': [0, required_amount * 0.7], 'color': "red"},
-#             {'range': [required_amount * 0.7, required_amount * 0.9], 'color': "orange"},
-#             {'range': [required_amount * 0.9, required_amount], 'color': "yellow"},
-#             {'range': [required_amount, required_amount * 1.2], 'color': "green"}
-#         ],
-#         'threshold': {
-#             'line': {'color': "red", 'width': 4},
-#             'thickness': 0.75,
-#             'value': required_amount
-#         }
-#     }
-# ))
-# gauge_fig.update_layout(height=250)
-
-# # Create forecast timeline chart
-# timeline_fig = go.Figure()
-
-# # Add forecast range as a filled area
-# timeline_fig.add_trace(go.Scatter(
-#     x=filtered_fin_history_df['date'],
-#     y=filtered_fin_history_df['balance'],
-#     fill=None,
-#     mode='lines',
-#     line_color='#5F2EEA',
-#     name='Daily Bank Balance'
-# ))
-
-# # timeline_fig.add_trace(go.Scatter(
-# #     x=dates,
-# #     y=forecast_lower,
-# #     fill='tonexty',
-# #     mode='lines',
-# #     line_color='rgba(73, 160, 213, 0.2)',
-# #     name='10th Percentile'
-# # ))
-
-# # # Add median forecast line
-# # timeline_fig.add_trace(go.Scatter(
-# #     x=dates,
-# #     y=forecast_range,
-# #     mode='lines',
-# #     line=dict(color='rgb(73, 160, 213)', width=2),
-# #     name='Median Forecast'
-# # ))
-
-# # # Add actual balance line
-# # timeline_fig.add_trace(go.Scatter(
-# #     x=dates,
-# #     y=actual_range,
-# #     mode='lines',
-# #     line=dict(color='rgb(44, 160, 44)', width=2, dash='dot'),
-# #     name='Actual Balance'
-# # ))
-
-# # Add target line
-# timeline_fig.add_trace(go.Scatter(
-#     x=filtered_fin_history_df['date'],
-#     y=[required_amount1] * len(filtered_fin_history_df['date']),
-#     mode='lines',
-#     line=dict(color='rgb(255, 99, 71)', width=2, dash='dash'),
-#     name='Required Amount'
-# ))
-
-# timeline_fig.update_layout(
-#     # title='Balance Forecast Timeline (30 Days)',
-#     margin=dict(t=10), 
-#     xaxis_title='Date',
-#     yaxis_title='Balance (£)',
-#     hovermode='x unified',
-#     legend=dict(
-#         orientation="h",
-#         yanchor="bottom",
-#         y=1.02,
-#         xanchor="right",
-#         x=1
-#     ),
-#     height=350
-# )
-
-# # Create a donut chart for recommendation
-# recommendation = affordability_df[affordability_df["Metric"] == "Recommendation"]["Value"].iloc[0]
-# probability = affordability_df[affordability_df["Metric"] == "Probability of meeting threshold"]["Value"].iloc[0]
-# prob_value = 40 if probability == "Under 50%" else 75  # Approximate for visualization
-
-# donut_fig = go.Figure(go.Pie(
-#     labels=["Below Threshold", "Above Threshold"],
-#     values=[100-prob_value, prob_value],
-#     hole=.7,
-#     marker_colors=['#ff9999', '#66b3ff']
-# ))
-
-# donut_fig.update_layout(
-#     title_text="Probability of Meeting Threshold",
-#     annotations=[dict(text=f"{probability}", x=0.5, y=0.5, font_size=20, showarrow=False)],
-#     height=250,
-#     showlegend=False
-# )
-
-# # Create a bar chart comparing forecasts
-# bar_data = {
-#     'Category': ['Current', 'Forecast (Median)', 'Required', 'Actual'],
-#     'Value': [current_balance, forecast_median, required_amount, actual_balance]
-# }
-# bar_df = pd.DataFrame(bar_data)
-
-# comparison_fig = px.bar(
-#     bar_df, 
-#     x='Category', 
-#     y='Value',
-#     color='Category',
-#     color_discrete_map={
-#         'Current': '#1f77b4',
-#         'Forecast (Median)': '#ff7f0e',
-#         'Required': '#d62728',
-#         'Actual': '#2ca02c'
-#     },
-#     title='Balance Comparison'
-# )
-# comparison_fig.update_layout(height=250)
-
-
-
 
 #  Table 
 # Define the metrics to show
@@ -265,14 +97,14 @@ show_metrics = [
 ]
 
 # Filter the DataFrame to only show rows where Metric is in the show_metrics list
-filtered_df = df[df['Metric'].isin(show_metrics)]
+cwb_validation_assessment_filtered_df = cwb_validation_assessment_df[cwb_validation_assessment_df['metric'].isin(show_metrics)]
 
 model_table = dash_table.DataTable(
-    data=filtered_df.to_dict('records'),
+    data=cwb_validation_assessment_filtered_df.to_dict('records'),
     columns=[
-        {"name": "Category", "id": "Category"}, 
-        {"name": "Metric", "id": "Metric"}, 
-        {"name": "Value", "id": "Value"}
+        {"name": "category", "id": "category"}, 
+        {"name": "metric", "id": "metric"}, 
+        {"name": "value", "id": "value"}
     ],
     style_table={'overflowX': 'auto'},
     style_cell={
@@ -291,22 +123,22 @@ model_table = dash_table.DataTable(
             'backgroundColor': 'rgb(248, 248, 248)'
         },
         {
-            'if': {'filter_query': '{Category} = "Hyperparameter"'},
+            'if': {'filter_query': '{category} = "Hyperparameter"'},
             'backgroundColor': '#e6f7ff',
             'borderTop': '1px solid #b3e0ff'
         },
         {
-            'if': {'filter_query': '{Category} = "Affordability"'},
+            'if': {'filter_query': '{category} = "Affordability"'},
             'backgroundColor': '#fff2e6',
             'borderTop': '1px solid #ffcc99'
         },
         {
-            'if': {'filter_query': '{Category} = "Forecast"'},
+            'if': {'filter_query': '{category} = "Forecast"'},
             'backgroundColor': '#e6ffe6',
             'borderTop': '1px solid #99ff99'
         },
         {
-            'if': {'filter_query': '{Category} = "Comparative"'},
+            'if': {'filter_query': '{category} = "Comparative"'},
             'backgroundColor': '#f0e6ff',
             'borderTop': '1px solid #cc99ff'
         }
@@ -314,146 +146,6 @@ model_table = dash_table.DataTable(
     style_as_list_view=True,
 )
 
-
-
-
-
-
-# def create_timeline_fig(option):
-#     """
-#     Create a timeline chart based on the selected option.
-    
-#     Parameters:
-#     option (str): Either "option1" (Financial History) or "option2" (Volatility)
-    
-#     Returns:
-#     plotly.graph_objects.Figure: The configured timeline chart
-#     """
-#     timeline_fig = go.Figure()
-    
-#     # Determine which column to use based on the selected option
-#     if option == "option1":
-#         y_values = filtered_fin_history_df['balance']
-#         y_title = 'Balance (£)'
-#         line_name = 'Daily Bank Balance'
-#     else:  # option2
-#         y_values = filtered_fin_history_df['rolling_7d_std']
-#         y_title = 'Volatility (7-Day Rolling Std Dev)'
-#         line_name = '7-Day Rolling Volatility'
-    
-#     # Add main line
-#     timeline_fig.add_trace(go.Scatter(
-#         x=filtered_fin_history_df['date'],
-#         y=y_values,
-#         fill=None,
-#         mode='lines',
-#         line_color='#5F2EEA',
-#         name=line_name
-#     ))
-    
-#     # Only add the required amount line for the balance option
-#     if option == "option1":
-#         timeline_fig.add_trace(go.Scatter(
-#             x=filtered_fin_history_df['date'],
-#             y=[required_amount] * len(filtered_fin_history_df['date']),
-#             mode='lines',
-#             line=dict(color='rgb(255, 99, 71)', width=2, dash='dash'),
-#             name='Required Amount'
-#         ))
-    
-#     timeline_fig.update_layout(
-#         margin=dict(t=10), 
-#         xaxis_title='Date',
-#         yaxis_title=y_title,
-#         hovermode='x unified',
-#         legend=dict(
-#             orientation="h",
-#             yanchor="bottom",
-#             y=1.02,
-#             xanchor="right",
-#             x=1
-#         ),
-#         height=350
-#     )
-    
-#     return timeline_fig
-
-# def create_timeline_fig(option):
-#     """
-#     Create a timeline chart based on the selected option.
-    
-#     Parameters:
-#     option (str): Either "option1" (Financial History) or "option2" (Volatility)
-    
-#     Returns:
-#     plotly.graph_objects.Figure: The configured timeline chart
-#     """
-#     timeline_fig = go.Figure()
-    
-#     # Determine which column to use based on the selected option
-#     if option == "option1":
-#         y_values = filtered_fin_history_df['balance']
-#         y_title = 'Balance (£)'
-#         line_name = 'Daily Bank Balance'
-#     else:  # option2
-#         y_values = filtered_fin_history_df['rolling_7d_std']
-#         y_title = 'Volatility (7-Day Rolling Std Dev)'
-#         line_name = '7-Day Rolling Volatility'
-    
-#     # Calculate the start date for the last 3 months
-#     last_date = filtered_fin_history_df['date'].max()
-#     three_months_ago = last_date - pd.DateOffset(months=3)
-    
-#     # Filter data for the last 3 months
-#     filtered_recent = filtered_fin_history_df[filtered_fin_history_df['date'] >= three_months_ago]
-    
-#     # Add shaded area for the last 3 months
-#     timeline_fig.add_trace(go.Scatter(
-#         x=filtered_recent['date'],
-#         y=filtered_recent[y_values.name],  # Use the column name from the Series
-#         fill='tozeroy',  # Fill down to the x-axis
-#         mode='none',  # No lines or markers
-#         fillcolor="rgba(173, 216, 230, 0.3)",
-#         name="Last 3 Months",
-#         hoverinfo="skip"
-#     ))
-    
-#     # Add main line
-#     timeline_fig.add_trace(go.Scatter(
-#         x=filtered_fin_history_df['date'],
-#         y=y_values,
-#         fill=None,
-#         mode='lines',
-#         line_color='#5F2EEA',
-#         name=line_name
-#     ))
-    
-#     # Only add the required amount line for the balance option
-#     if option == "option1":
-#         timeline_fig.add_trace(go.Scatter(
-#             x=filtered_fin_history_df['date'],
-#             y=[required_amount] * len(filtered_fin_history_df['date']),
-#             mode='lines',
-#             line=dict(color='rgb(255, 99, 71)', width=2, dash='dash'),
-#             name='Required Amount'
-#         ))
-    
-#     timeline_fig.update_layout(
-#         margin=dict(t=10), 
-#         xaxis_title='Date',
-#         yaxis_title=y_title,
-#         hovermode='x unified',
-#         legend=dict(
-#             orientation="h",
-#             yanchor="bottom",
-#             y=1.02,
-#             xanchor="right",
-#             x=1
-#         ),
-#         height=350
-#     )
-    
-#     return timeline_fig
 
 
 def create_timeline_fig(option):
@@ -557,25 +249,6 @@ def create_30_day_forecast_timeline_fig(option):
     if not pd.api.types.is_datetime64_any_dtype(cwb_validation_forecasts_df_copy['date']):
         cwb_validation_forecasts_df_copy['date'] = pd.to_datetime(cwb_validation_forecasts_df_copy['date'])
     
-    # # Calculate the start date for the last 3 months
-    # last_date = filtered_fin_history_df_copy['date'].max()
-    # three_months_ago = last_date - pd.DateOffset(months=3)
-    
-    # # Filter data for the last 3 months
-    # filtered_recent = filtered_fin_history_df_copy[filtered_fin_history_df_copy['date'] >= three_months_ago]
-    
-    # # Add shaded area for the last 3 months
-    # if not filtered_recent.empty:
-    #     y_column = 'balance' if option == "option1" else 'rolling_7d_std'
-    #     timeline_fig.add_trace(go.Scatter(
-    #         x=filtered_recent['date'],
-    #         y=filtered_recent[y_column],
-    #         fill='tozeroy',
-    #         mode='none',
-    #         fillcolor="rgba(173, 216, 230, 0.3)",
-    #         name="Last 3 Months",
-    #         hoverinfo="skip"
-    #     ))
     
     # Only add the required amount line for the balance option
     if option == "option1":
@@ -618,11 +291,69 @@ def create_30_day_forecast_timeline_fig(option):
             line_color='#5F2EEA',
             name=line_name
         ))
+    
+    timeline_fig.update_layout(
+        margin=dict(t=10), 
+        xaxis_title='Date',
+        yaxis_title=y_title,
+        hovermode='x unified',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
+        height=350
+    )
+    
+    return timeline_fig
 
-   
+def create_30_exchange_rate_fig(option):
+    """
+    Create a timeline chart based on the selected option.
+    """
+    timeline_fig = go.Figure()
+    
+    # Determine which column to use based on the selected option
+    if option == "option1":
+        y_values = get_cwb_exchange_rate_df['naira_value']  # update to 30 days test forecast instead of validation forecast
+        y_title = 'Balance (£)'
+        line_name = 'Historical NGN-GBP exchange Rate'
+    else:  # option2
+        y_values = get_cwb_exchange_rate_df['naira_value']
+        y_title = 'Balance (£)'
+        line_name = 'Forecasted NGN-GBP exchange Rate'
+    
+    # Make sure date column is in datetime format
+    get_cwb_exchange_rate_df_copy = get_cwb_exchange_rate_df.copy()
+    if not pd.api.types.is_datetime64_any_dtype(get_cwb_exchange_rate_df_copy['date']):
+        get_cwb_exchange_rate_df_copy['date'] = pd.to_datetime(get_cwb_exchange_rate_df_copy['date'])
     
     
-    
+    # Only add the required amount line for the balance option
+    if option == "option1":
+        timeline_fig.add_trace(go.Scatter(
+            x=get_cwb_exchange_rate_df_copy['date'],
+            y=y_values,
+            fill=None,
+            mode='lines',
+            line_color='red',
+            name=line_name
+        ))
+
+
+    if option == "option2":
+        # Add actual line
+        timeline_fig.add_trace(go.Scatter(
+            x=get_cwb_exchange_rate_df_copy['date'],
+            y= y_values,
+            fill=None,
+            mode='lines',
+            line_color='#5F2EEA',
+            name=line_name
+        ))
+        
     
     timeline_fig.update_layout(
         margin=dict(t=10), 

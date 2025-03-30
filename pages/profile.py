@@ -3,7 +3,7 @@ from dash import dcc, html, dash_table
 import dash_bootstrap_components as dbc
 
 
-from components.graph import affordability_df, timeline_fig
+from components.graph import affordability_df
 
 # Register the page
 dash.register_page(
@@ -280,140 +280,6 @@ def create_security_card():
         ])
     )
 
-# # Notifications Card
-# def create_notifications_card():
-#     return dbc.Card(
-#         dbc.CardBody([
-#             html.H5("Notifications", className="card-title mb-3"),
-#             html.Div([
-#                 html.Div(
-#                     className="mb-3",
-#                     children=[
-#                         html.Label("Email Notifications", className="mb-2"),
-#                         dbc.Checklist(
-#                             options=[
-#                                 {"label": "Group Invites", "value": "group_invites"},
-#                                 {"label": "Payment Reminders", "value": "payment_reminder"},
-#                                 {"label": "Weekly Summary", "value": "weekly_summary"}
-#                             ],
-#                             value=["group_invites"],
-#                             inline=False
-#                         )
-#                     ]
-#                 ),
-#                 html.Div(
-#                     className="mb-3",
-#                     children=[
-#                         html.Label("SMS Notifications", className="mb-2"),
-#                         dbc.Checklist(
-#                             options=[
-#                                 {"label": "Critical Alerts", "value": "critical_alerts"},
-#                                 {"label": "Contribution Reminders", "value": "contribution_reminder"}
-#                             ],
-#                             value=[],
-#                             inline=False
-#                         )
-#                     ]
-#                 ),
-#                 dbc.Button("Save Preferences", color="primary", outline=True)
-#             ])
-#         ])
-#     )
-# Extra - Affordability Card
-def create_notifications_card():
-    return dbc.Card(
-        dbc.CardBody([
-            # html.H5("Notifications", className="card-title mb-3"),
-            html.Div([
-                html.H4("Tuition Affordability Assessment"),
-                html.Div([
-                    html.Div([
-                        html.P("Required Amount"),
-                        html.H3(affordability_df[affordability_df["Metric"] == "Required amount"]["Value"].iloc[0])
-                    ], className="metric-card"),
-                    html.Div([
-                        html.P("Assessment"),
-                        html.H3(affordability_df[affordability_df["Metric"] == "Assessment"]["Value"].iloc[0])
-                    ], className="metric-card warning"),
-                    html.Div([
-                        html.P("Buffer Amount"),
-                        html.H3(affordability_df[affordability_df["Metric"] == "Buffer amount (median forecast)"]["Value"].iloc[0])
-                    ], className="metric-card danger")
-                ], className="metrics-container")
-            ], className="card-afford"),
-
-            html.Div([
-                dcc.Graph(figure=timeline_fig)
-            ], className="card-afford1"),
-            # html.Div([
-            #     html.Div(
-            #         className="mb-3",
-            #         children=[
-            #             html.Label("Email Notifications", className="mb-2"),
-            #             dbc.Checklist(
-            #                 options=[
-            #                     {"label": "Group Invites", "value": "group_invites"},
-            #                     {"label": "Payment Reminders", "value": "payment_reminder"},
-            #                     {"label": "Weekly Summary", "value": "weekly_summary"}
-            #                 ],
-            #                 value=["group_invites"],
-            #                 inline=False
-            #             )
-            #         ]
-            #     ),
-            #     html.Div(
-            #         className="mb-3",
-            #         children=[
-            #             html.Label("SMS Notifications", className="mb-2"),
-            #             dbc.Checklist(
-            #                 options=[
-            #                     {"label": "Critical Alerts", "value": "critical_alerts"},
-            #                     {"label": "Contribution Reminders", "value": "contribution_reminder"}
-            #                 ],
-            #                 value=[],
-            #                 inline=False
-            #             )
-            #         ]
-            #     ),
-            #     dbc.Button("Save Preferences", color="primary", outline=True)
-            # ])
-        ], className="card-afford2")
-    )
-# # Layout
-# layout = html.Div([
-#     # Page Header
-#     create_page_header(),
-    
-#     # Container for all profile sections
-#     dbc.Container([
-#         # First Row: Personal Information
-#         html.Div(className="mb-4", children=[create_personal_info_card()]),
-        
-#         # Second Row: Timeline Cards
-#         html.Div(className="mb-4", children=[create_timeline_cards()]),
-        
-#         # Third Row: Account Settings
-#         html.Div(className="mb-4", children=[
-#             dbc.Row([
-#                 dbc.Col(create_account_settings_card(), width=12)
-#             ])
-#         ]),
-        
-#         # Fourth Row: Security
-#         html.Div(className="mb-4", children=[
-#             dbc.Row([
-#                 dbc.Col(create_security_card(), width=12)
-#             ])
-#         ]),
-        
-#         # Fifth Row: Notifications
-#         html.Div(children=[
-#             dbc.Row([
-#                 dbc.Col(create_notifications_card(), width=12)
-#             ])
-#         ])
-#     ])
-# ])
 
 # Change from static layout to function-based layout
 def layout():
@@ -443,11 +309,11 @@ def layout():
                 ])
             ]),
             
-            # Fifth Row: Notifications
-            html.Div(children=[
-                dbc.Row([
-                    dbc.Col(create_notifications_card(), width=12)
-                ])
-            ])
+            # # Fifth Row: Notifications
+            # html.Div(children=[
+            #     dbc.Row([
+            #         dbc.Col(create_notifications_card(), width=12)
+            #     ])
+            # ])
         ])
     ])

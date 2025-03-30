@@ -1,18 +1,52 @@
 import dash
-from dash import dcc, html, dash_table
+from dash import dcc, html, dash_table, Input, Output, callback
 import dash_bootstrap_components as dbc
 
 
-from components.graph import affordability_df, timeline_fig, gauge_fig, model_table
+from components.graph import (
+    required_amount,
+    filtered_fin_history_df,
+    most_recent_balance, # Most recent account balance 
+    affordability_df, 
+    model_table, 
+    create_timeline_fig,
+    create_30_day_forecast_timeline_fig
+)
 
 # Register the page
 dash.register_page(
     __name__, 
     path="/finhealth", 
-    title="Profile | Financial Health", 
+    title="Financial Health | Financial Health", 
     name="Finhealth"
 )
 # 
+
+##################### Data Ingestion #####################
+
+
+##################### Data Ingestion #####################
+# Define as a function
+# def get_financial_data():
+#     required_amount = 14000
+#     fin_history_enhanced_table_name = 'fin_history_enhanced'
+#     fin_history = retrieve_data_from_sql(fin_history_enhanced_table_name)
+    
+#     # Filter and process
+#     filtered_fin_history_df = fin_history.query('applicant_id == "912345678"').sort_values('date_added')
+#     most_recent_balance = f"£{round(filtered_fin_history_df['balance'].iloc[-1])}"
+    
+#     return filtered_fin_history_df, most_recent_balance
+
+# This data will only be loaded when the function is explicitly called
+# filtered_data, balance = get_financial_data()
+##########################################################
+
+########################################################## 
+
+
+
+
 # Page header component
 def create_page_header():
     return html.Div(
@@ -88,74 +122,6 @@ def create_personal_data_card():
 
 
 
-def create_personal_info_card():
-    return dbc.Card(
-        dbc.CardBody([
-            # Verified Badge in top right corner
-            html.Div(
-                "Verified", 
-                className="position-absolute badge", 
-                style={
-                    "top": "10px", 
-                    "right": "10px",
-                    "backgroundColor": "rgba(46, 204, 113, 0.15)", 
-                    "color": "#2ECC71"
-                }
-            ),
-            dbc.Row([
-                dbc.Col([
-                    html.H4("Personal Information", className="card-title mb-4"),
-                    dbc.Row([
-                        dbc.Col([
-                            dbc.Label("First Name"),
-                            dbc.Input(
-                                type="text", 
-                                placeholder="Enter first name", 
-                                value="Abel",
-                                className="mb-3"
-                            )
-                        ], width=6),
-                        dbc.Col([
-                            dbc.Label("Last Name"),
-                            dbc.Input(
-                                type="text", 
-                                placeholder="Enter last name", 
-                                value="Johnson",
-                                className="mb-3"
-                            )
-                        ], width=6),
-                        
-                        dbc.Col([
-                            dbc.Label("Email Address"),
-                            dbc.Input(
-                                type="email", 
-                                placeholder="Enter email", 
-                                value="abel.johnson@example.com",
-                                className="mb-3"
-                            )
-                        ], width=12),
-                        
-                        dbc.Col([
-                            dbc.Label("Phone Number"),
-                            dbc.InputGroup([
-                                dbc.InputGroupText("+44"),
-                                dbc.Input(
-                                    type="tel", 
-                                    placeholder="Phone number", 
-                                    value="7700 900000"
-                                )
-                            ], className="mb-3")
-                        ], width=12),
-                        
-                        dbc.Col([
-                            dbc.Button("Update Profile", color="primary")
-                        ], width=12)
-                    ])
-                ], width=12)
-            ])
-        ], className="position-relative")
-    )
-
 # Extra - Affordability Card
 def create_notifications_card():
     return dbc.Card(
@@ -170,22 +136,22 @@ def create_notifications_card():
                                 html.H4("Tuition Affordability Assessment"),
                                 html.Div([
                                     html.Div([
-                                        html.P("Required Tuition Amount"),
-                                        html.H3(affordability_df[affordability_df["Metric"] == "Required amount"]["Value"].iloc[0])
+                                        html.P("Tuition & Living Expenses (£)"),
+                                        html.H3(f"£{required_amount}")
                                     ], className="metric-card"),
 
                                     html.Div([
                                         html.P("Applicant Bank Balance"),
-                                        html.H3(affordability_df[affordability_df["Metric"] == "Required amount"]["Value"].iloc[0])
+                                        html.H3(f"{most_recent_balance}")
                                     ], className="metric-card warning"),
 
                                     html.Div([
                                         html.P("Threshold met"),
-                                        html.H3(affordability_df[affordability_df["Metric"] == "Assessment"]["Value"].iloc[0])
+                                        html.H3("Yes")
                                     ], className="metric-card danger"),
                                     html.Div([
-                                        html.P("Pending liability"),
-                                        html.H3(affordability_df[affordability_df["Metric"] == "Assessment"]["Value"].iloc[0])
+                                        html.P("Cross-border debt/liability"),
+                                        html.H3("£0")
                                     ], className="metric-card danger")
 
                                 ], className="metrics-container")
@@ -207,10 +173,16 @@ def create_notifications_card():
                                         className="d-flex align-items-center gap-4"
                                     ),
                                 ]),
-                                dcc.Graph(
-                                    figure=timeline_fig,
-                                    config={'displayModeBar': False},
-                                    )
+                                html.Div(
+                                    id="",
+                                    children=[
+                                        dcc.Graph(
+                                            id="timeline-chart-container",
+                                            config={'displayModeBar': False}
+                                                    )
+                                        
+                                    ]
+                                )
                                 ], className="card-afford1"),
                         ], md=9, xs=12
                     )
@@ -240,7 +212,7 @@ def create_forecast_result_card():
                                 html.Div([
                                     html.Div([
                                         html.Div([
-                                            html.P("Next Installment Amount"),
+                                            html.P("Tuition and Living Expenses(£)"),
                                             html.I(
                                                 className="bi bi-info-circle text-info", 
                                                 id="info-tooltip",
@@ -280,16 +252,22 @@ def create_forecast_result_card():
                                             {"label": "Next 30 days Forecast  (£)", "value": "option1"}, 
                                             {"label": "Forecast vs Validation data  (£) ", "value": "option2"}
                                         ],
-                                        id="radio-buttons-inline",
+                                        id="forecast-radio-buttons-inline",
                                         value="option1",
                                         inline=True,
                                         className="d-flex align-items-center gap-4"
                                     ),
                                 ]),
-                                dcc.Graph(
-                                    figure=timeline_fig,
-                                    config={'displayModeBar': False},
-                                    )
+                                html.Div(
+                                    id="",
+                                    children=[
+                                        dcc.Graph(
+                                            id="forecast-timeline-chart-container",
+                                            config={'displayModeBar': False}
+                                                    )
+                                        
+                                    ]
+                                )
                                 ], className="card-afford1"),
                         ], md=9, xs=12
                     )
@@ -402,3 +380,20 @@ def layout():
             ])
         ])
     ])
+
+
+
+@callback(
+    Output("timeline-chart-container", "figure"),
+    Input("radio-buttons-inline", "value") 
+)
+def update_timeline_chart(selected_option):
+    return create_timeline_fig(selected_option)
+
+# Forecast chart callback
+@callback(
+    Output("forecast-timeline-chart-container", "figure"),
+    Input("forecast-radio-buttons-inline", "value") 
+)
+def update_balance_forecast_chart(selected_option):
+    return create_30_day_forecast_timeline_fig(selected_option)

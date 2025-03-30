@@ -124,7 +124,7 @@
 
 
 import dash
-from dash import html, dcc
+from dash import html, dcc, callback
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 import time
@@ -133,6 +133,12 @@ import uuid
 # Import authentication components
 from components.login import create_login_layout
 from auth import USERS_DB, SESSION_TIMEOUT, validate_user
+
+
+from components.graph import (
+    create_timeline_fig
+)
+
 
 # 
 # Initialize the Dash app with multi-page support
@@ -334,12 +340,16 @@ def display_page(pathname, session_data, error_data):
     ])
 
 # Import callbacks
-import callbacks
+# import callbacks
+
+# callbacks 
+
+
 
 # For development
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, use_reloader=False)
 else:
     # This branch is used by App Engine
     server = app.server

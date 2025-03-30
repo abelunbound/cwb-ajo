@@ -19,6 +19,7 @@ numpy==2.2.3
 packaging==24.2
 pandas==2.2.3
 plotly==6.0.0
+psycopg2-binary==2.9.10
 python-dateutil==2.9.0.post0
 pytz==2025.1
 requests==2.32.3

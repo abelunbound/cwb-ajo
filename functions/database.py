@@ -1,8 +1,14 @@
 import psycopg2
 import pandas as pd
 import numpy as np
+from dotenv import load_dotenv
+import os
+from pathlib import Path
 np.bool = np.bool_ # https://stackoverflow.com/questions/74893742/how-to-solve-attributeerror-module-numpy-has-no-attribute-bool
 
+# Load environment variables from the functions directory
+env_path = Path(__file__).parent / 'cwb-db.env'
+load_dotenv(env_path)
 
 # Insert the data into the SQL database - modified to use execute many
 
@@ -121,18 +127,21 @@ def prepare_sql_queries_and_values(column_definitions, table_name, data):
 def get_db_connection():
     """
     Creates a database connection using environment variables
+    
+    TODO: Security Improvement Needed
+    - Remove hardcoded fallback credentials before deploying to production
+    - Add proper error handling for missing environment variables
+    - See TODO.md for complete list of pending security improvements
     """
-    dbname='cwb-database'
     try:
         connection = psycopg2.connect(
-            dbname=dbname,
-            user='abelakeni',
-            password='unbound365',
-            host='35.192.88.249',
-            port='5432'   
-            
+            dbname=os.getenv('DB_NAME', 'cwb-database').strip("'"),
+            user=os.getenv('DB_USER', 'abelakeni').strip("'"),
+            password=os.getenv('DB_PASSWORD', 'unbound365').strip("'"),
+            host=os.getenv('DB_HOST', '35.192.88.249').strip("'"),
+            port=os.getenv('DB_PORT', '5432').strip("'")   
         )
-        print(f"\nConnected to database...'{dbname}'")
+        print(f"\nConnected to database...'{os.getenv('DB_NAME', 'cwb-database')}'")
         return connection 
     
     except psycopg2.Error as error:

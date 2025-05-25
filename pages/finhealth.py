@@ -48,8 +48,6 @@ dash.register_page(
 ########################################################## 
 
 
-
-
 # Page header component
 def create_page_header():
     return html.Div(

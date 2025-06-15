@@ -23,59 +23,115 @@ required_amount = 14000
 applicant_id = '912345678'
 applicant_id_query = f'applicant_id == "{applicant_id}"'
 
-cwb_combined_rmse_table_name = 'cwb_combined_rmse' # Combined results for validation and future set
-cwb_combined_rmse_df = retrieve_data_from_sql(cwb_combined_rmse_table_name)
-# Get data for only target applicant
-cwb_combined_rmse_df = cwb_combined_rmse_df.query(applicant_id_query)
-print(f"\n:::::Graph Page: RMSE Data frame with length: {len(cwb_combined_rmse_df)} retrieved from {cwb_combined_rmse_table_name}\n")
+# Initialize variables with defaults to prevent crashes
+cwb_combined_rmse_df = None
+filtered_fin_history_df = None
+cwb_validation_forecasts_df = None
+cwb_validation_assessment_df = None
+get_cwb_exchange_rate_df = None
+quartile_with_best_rmse = 'p80'  # Default value
+best_rmse_value = 0
+forecast_accuracy = 0
+most_recent_balance = "£0"
 
-### Get best RMSE quartile
-### Get index of minimum RMSE in thirty_day_forecast
-min_index = cwb_combined_rmse_df['thirty_day_forecast'].idxmin()
-# Get the corresponding quartile value for best RMSE
-quartile_with_best_rmse = cwb_combined_rmse_df.loc[min_index, 'quartiles']
-# value for best RMSE
-best_rmse_value = cwb_combined_rmse_df['thirty_day_forecast'].min()
-best_rmse_value = round(best_rmse_value)
+try:
+    cwb_combined_rmse_table_name = 'cwb_combined_rmse' # Combined results for validation and future set
+    cwb_combined_rmse_df = retrieve_data_from_sql(cwb_combined_rmse_table_name)
+    if cwb_combined_rmse_df is not None:
+        # Get data for only target applicant
+        cwb_combined_rmse_df = cwb_combined_rmse_df.query(applicant_id_query)
+        print(f"\n:::::Graph Page: RMSE Data frame with length: {len(cwb_combined_rmse_df)} retrieved from {cwb_combined_rmse_table_name}\n")
+    else:
+        print(f"Warning: Could not load data from {cwb_combined_rmse_table_name}")
+        cwb_combined_rmse_df = pd.DataFrame()  # Create empty DataFrame
+except Exception as e:
+    print(f"Error loading RMSE data: {e}")
+    cwb_combined_rmse_df = pd.DataFrame()  # Create empty DataFrame
+
+# Get best RMSE quartile (with error handling)
+try:
+    if not cwb_combined_rmse_df.empty and 'thirty_day_forecast' in cwb_combined_rmse_df.columns:
+        ### Get index of minimum RMSE in thirty_day_forecast
+        min_index = cwb_combined_rmse_df['thirty_day_forecast'].idxmin()
+        # Get the corresponding quartile value for best RMSE
+        quartile_with_best_rmse = cwb_combined_rmse_df.loc[min_index, 'quartiles']
+        # value for best RMSE
+        best_rmse_value = cwb_combined_rmse_df['thirty_day_forecast'].min()
+        best_rmse_value = round(best_rmse_value)
+except Exception as e:
+    print(f"Error processing RMSE data: {e}")
+
+try:
+    fin_history_enhanced_table_name = 'fin_history_enhanced' # Feature engineered data, applicant id, date, time etc
+    fin_history = retrieve_data_from_sql(fin_history_enhanced_table_name)
+    if fin_history is not None:
+        # Sort by date column (replace 'date_column' with your actual column name)
+        filtered_fin_history_df = fin_history.query(applicant_id_query).sort_values('date')
+        print(f"\n:::::Graph Page: Data frame with length: {len(filtered_fin_history_df)} retrieved from {fin_history_enhanced_table_name}\n")
+    else:
+        print(f"Warning: Could not load data from {fin_history_enhanced_table_name}")
+        filtered_fin_history_df = pd.DataFrame()
+except Exception as e:
+    print(f"Error loading financial history data: {e}")
+    filtered_fin_history_df = pd.DataFrame()
 
 
-fin_history_enhanced_table_name = 'fin_history_enhanced' # Feature engineered data, applicant id, date, time etc
-fin_history = retrieve_data_from_sql(fin_history_enhanced_table_name)
-# Sort by date column (replace 'date_column' with your actual column name)
-filtered_fin_history_df = fin_history.query(applicant_id_query).sort_values('date')
-print(f"\n:::::Graph Page: Data frame with length: {len(filtered_fin_history_df)} retrieved from {fin_history_enhanced_table_name}\n")
+try:
+    cwb_validation_forecasts_table_name = 'cwb_validation_forecasts'
+    cwb_validation_forecasts_df = retrieve_data_from_sql(cwb_validation_forecasts_table_name)
+    if cwb_validation_forecasts_df is not None:
+        # Sort by date column (replace 'date_column' with your actual column name)
+        cwb_validation_forecasts_df = cwb_validation_forecasts_df.query(applicant_id_query).sort_values('date')
+        print(f"\n:::::Graph Page: Data frame with length: {len(cwb_validation_forecasts_df)} retrieved from {cwb_validation_forecasts_table_name}\n")
+        
+        # Get MAPE & Forecast Accuracy using 'actual' and 'p90' columns
+        if not cwb_validation_forecasts_df.empty and all(col in cwb_validation_forecasts_df.columns for col in ['actual', 'p92']):
+            mape = np.mean(np.abs((cwb_validation_forecasts_df['actual'] - cwb_validation_forecasts_df['p92']) / cwb_validation_forecasts_df['actual'])) * 100
+            forecast_accuracy = round(100-mape, 2)
+            print(f"Calculating MAPE for Quartile with best RMSE:- {quartile_with_best_rmse }: {mape:.2f}%")
+            print(f"Calculating Forecast Accuracy for Quartile with best RMSE:: {forecast_accuracy:.2f}%")
+    else:
+        print(f"Warning: Could not load data from {cwb_validation_forecasts_table_name}")
+        cwb_validation_forecasts_df = pd.DataFrame()
+except Exception as e:
+    print(f"Error loading validation forecasts data: {e}")
+    cwb_validation_forecasts_df = pd.DataFrame()
 
-
-
-cwb_validation_forecasts_table_name = 'cwb_validation_forecasts'
-cwb_validation_forecasts_df = retrieve_data_from_sql(cwb_validation_forecasts_table_name)
-# Sort by date column (replace 'date_column' with your actual column name)
-cwb_validation_forecasts_df = cwb_validation_forecasts_df.query(applicant_id_query).sort_values('date')
-print(f"\n:::::Graph Page: Data frame with length: {len(cwb_validation_forecasts_df)} retrieved from {cwb_validation_forecasts_table_name}\n")
-
-# Get MAPE & Forecast Accuracy using 'actual' and 'p90' columns
-mape = np.mean(np.abs((cwb_validation_forecasts_df['actual'] - cwb_validation_forecasts_df['p92']) / cwb_validation_forecasts_df['actual'])) * 100
-# mape = round(mape)
-forecast_accuracy = round(100-mape, 2)
-print(f"Calculating MAPE for Quartile with best RMSE:- {quartile_with_best_rmse }: {mape:.2f}%")
-print(f"Calculating Forecast Accuracy for Quartile with best RMSE:: {forecast_accuracy:.2f}%")
-
-# Then get the last entry 
-most_recent_balance = f"£{round(filtered_fin_history_df['balance'].iloc[-1])}"
+# Get most recent balance (with error handling)
+try:
+    if not filtered_fin_history_df.empty and 'balance' in filtered_fin_history_df.columns:
+        most_recent_balance = f"£{round(filtered_fin_history_df['balance'].iloc[-1])}"
+except Exception as e:
+    print(f"Error calculating most recent balance: {e}")
+    most_recent_balance = "£0"
 
 ########################################################## 
 
-# Hyperparameters and Results
-cwb_validation_assessment_table_name = 'cwb_validation_assessment' # Assessment and Hyperparameters for validation set
+# Hyperparameters and Results (with error handling)
+try:
+    cwb_validation_assessment_table_name = 'cwb_validation_assessment' # Assessment and Hyperparameters for validation set
+    cwb_validation_assessment_df = retrieve_data_from_sql(cwb_validation_assessment_table_name)
+    if cwb_validation_assessment_df is not None:
+        cwb_validation_assessment_df = cwb_validation_assessment_df.query(applicant_id_query)
+    else:
+        print(f"Warning: Could not load data from {cwb_validation_assessment_table_name}")
+        cwb_validation_assessment_df = pd.DataFrame()
+except Exception as e:
+    print(f"Error loading validation assessment data: {e}")
+    cwb_validation_assessment_df = pd.DataFrame()
 
-cwb_validation_assessment_df = retrieve_data_from_sql(cwb_validation_assessment_table_name)
-cwb_validation_assessment_df = cwb_validation_assessment_df.query(applicant_id_query)
-
-
-# 
-cwb_exchange_rate_table_name = 'cwb_exchange_rate'
-get_cwb_exchange_rate_df = retrieve_data_from_sql(cwb_exchange_rate_table_name)
-get_cwb_exchange_rate_df = get_cwb_exchange_rate_df.query(applicant_id_query)
+# Exchange rate data (with error handling)
+try:
+    cwb_exchange_rate_table_name = 'cwb_exchange_rate'
+    get_cwb_exchange_rate_df = retrieve_data_from_sql(cwb_exchange_rate_table_name)
+    if get_cwb_exchange_rate_df is not None:
+        get_cwb_exchange_rate_df = get_cwb_exchange_rate_df.query(applicant_id_query)
+    else:
+        print(f"Warning: Could not load data from {cwb_exchange_rate_table_name}")
+        get_cwb_exchange_rate_df = pd.DataFrame()
+except Exception as e:
+    print(f"Error loading exchange rate data: {e}")
+    get_cwb_exchange_rate_df = pd.DataFrame()
 
 
 
@@ -96,8 +152,15 @@ show_metrics = [
 
 ]
 
-# Filter the DataFrame to only show rows where Metric is in the show_metrics list
-cwb_validation_assessment_filtered_df = cwb_validation_assessment_df[cwb_validation_assessment_df['metric'].isin(show_metrics)]
+# Filter the DataFrame to only show rows where Metric is in the show_metrics list (with error handling)
+try:
+    if not cwb_validation_assessment_df.empty and 'metric' in cwb_validation_assessment_df.columns:
+        cwb_validation_assessment_filtered_df = cwb_validation_assessment_df[cwb_validation_assessment_df['metric'].isin(show_metrics)]
+    else:
+        cwb_validation_assessment_filtered_df = pd.DataFrame()
+except Exception as e:
+    print(f"Error filtering assessment data: {e}")
+    cwb_validation_assessment_filtered_df = pd.DataFrame()
 
 model_table = dash_table.DataTable(
     data=cwb_validation_assessment_filtered_df.to_dict('records'),

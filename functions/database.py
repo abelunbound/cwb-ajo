@@ -1,14 +1,36 @@
 import psycopg2
 import pandas as pd
 import numpy as np
-from dotenv import load_dotenv
 import os
 from pathlib import Path
+from config.development import DevelopmentConfig
+from config.production import ProductionConfig
 np.bool = np.bool_ # https://stackoverflow.com/questions/74893742/how-to-solve-attributeerror-module-numpy-has-no-attribute-bool
 
-# Load environment variables from the functions directory
-env_path = Path(__file__).parent / 'cwb-db.env'
-load_dotenv(env_path)
+# Get configuration based on environment
+def get_config():
+    """Get configuration based on DASH_ENV or FLASK_ENV environment variable.
+    
+    Determines the appropriate configuration class to use based on environment
+    variables. Checks DASH_ENV first, then FLASK_ENV, defaulting to development.
+    
+    Returns:
+        BaseConfig: Configuration instance (DevelopmentConfig or ProductionConfig)
+        
+    Raises:
+        ValueError: If required environment variables are missing
+    """
+    # Try DASH_ENV first, then FLASK_ENV, then default to development
+    env = os.getenv('DASH_ENV') or os.getenv('FLASK_ENV', 'development')
+    
+    if env == 'production':
+        config = ProductionConfig()
+    else:
+        config = DevelopmentConfig()
+    
+    # Validate configuration
+    config.validate_config()
+    return config
 
 # Insert the data into the SQL database - modified to use execute many
 
@@ -125,27 +147,36 @@ def prepare_sql_queries_and_values(column_definitions, table_name, data):
 
 
 def get_db_connection():
-    """
-    Creates a database connection using environment variables
+    """Create a database connection using configuration system.
     
-    TODO: Security Improvement Needed
-    - Remove hardcoded fallback credentials before deploying to production
-    - Add proper error handling for missing environment variables
-    - See TODO.md for complete list of pending security improvements
+    Establishes a PostgreSQL database connection using credentials
+    from the configuration system. Handles connection errors gracefully.
+    
+    Returns:
+        psycopg2.connection: Database connection object or None if connection fails
+        
+    Raises:
+        psycopg2.Error: Database connection errors are caught and logged
+        ValueError: Configuration validation errors are caught and logged
     """
     try:
+        config = get_config()
+        
         connection = psycopg2.connect(
-            dbname=os.getenv('DB_NAME', 'cwb-database').strip("'"),
-            user=os.getenv('DB_USER', 'abelakeni').strip("'"),
-            password=os.getenv('DB_PASSWORD', 'unbound365').strip("'"),
-            host=os.getenv('DB_HOST', '35.192.88.249').strip("'"),
-            port=os.getenv('DB_PORT', '5432').strip("'")   
+            dbname=config.DB_NAME,
+            user=config.DB_USER,
+            password=config.DB_PASSWORD,
+            host=config.DB_HOST,
+            port=config.DB_PORT
         )
-        print(f"\nConnected to database...'{os.getenv('DB_NAME', 'cwb-database')}'")
+        print(f"\nConnected to database...'{config.DB_NAME}'")
         return connection 
     
     except psycopg2.Error as error:
         print(f"Error connecting to the database: {error}")
+        return None
+    except ValueError as error:
+        print(f"Configuration error: {error}")
         return None
 
 def insert_data_into_sql_data_base(table_query, insert_query, values_list):

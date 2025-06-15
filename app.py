@@ -123,6 +123,10 @@
 #     app.run_server(debug=True, use_reloader=True)
 
 
+# Force load environment variables FIRST before any other imports
+from dotenv import load_dotenv
+load_dotenv()
+
 import dash
 from dash import html, dcc, callback
 import dash_bootstrap_components as dbc

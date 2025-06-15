@@ -1,0 +1,25 @@
+# Example .env file for Ajo application
+# Copy this to .env in your project root directory
+
+# Database Configuration (Required)
+DB_NAME=cwb-database
+DB_USER=abelakeni
+DB_PASSWORD=unbound365
+DB_HOST=35.192.88.249
+DB_PORT=5432
+
+# Application Security
+SECRET_KEY=dev-secret-key-change-in-production
+
+# Environment Configuration (Choose one approach)
+# Option 1: Use DASH_ENV (Recommended for clarity)
+DASH_ENV=development
+
+# Option 2: Use FLASK_ENV (Framework standard)
+# FLASK_ENV=development
+
+# Option 3: Use both (DASH_ENV takes priority)
+# DASH_ENV=development
+# FLASK_ENV=development
+
+# Valid values: development, production 

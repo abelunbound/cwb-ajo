@@ -7,6 +7,9 @@ for all environment-specific configuration classes.
 import os
 from dotenv import load_dotenv
 
+# Load environment variables at module level
+load_dotenv()
+
 
 class BaseConfig:
     """Base configuration class with common settings.
@@ -28,23 +31,35 @@ class BaseConfig:
     
     def __init__(self):
         """Initialize configuration by loading environment variables."""
-        # Load environment variables from .env file
-        load_dotenv()
+        pass
     
-    # Database Configuration
-    DB_NAME = os.getenv('DB_NAME')
-    DB_USER = os.getenv('DB_USER') 
-    DB_PASSWORD = os.getenv('DB_PASSWORD')
-    DB_HOST = os.getenv('DB_HOST')
-    DB_PORT = os.getenv('DB_PORT', '5432')
+    # Database Configuration - loaded dynamically
+    @property
+    def DB_NAME(self):
+        return os.getenv('DB_NAME')
+    
+    @property
+    def DB_USER(self):
+        return os.getenv('DB_USER')
+    
+    @property
+    def DB_PASSWORD(self):
+        return os.getenv('DB_PASSWORD')
+    
+    @property
+    def DB_HOST(self):
+        return os.getenv('DB_HOST')
+    
+    @property
+    def DB_PORT(self):
+        return os.getenv('DB_PORT', '5432')
     
     # Application Configuration
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     DEBUG = False
     TESTING = False
     
-    @classmethod
-    def validate_config(cls):
+    def validate_config(self):
         """Validate that all required environment variables are set.
         
         Checks that all critical environment variables required for
@@ -60,7 +75,7 @@ class BaseConfig:
         missing_vars = []
         
         for var in required_vars:
-            if not getattr(cls, var):
+            if not getattr(self, var):
                 missing_vars.append(var)
         
         if missing_vars:

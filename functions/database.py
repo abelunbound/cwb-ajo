@@ -28,8 +28,8 @@ def get_config():
     else:
         config = DevelopmentConfig()
     
-    # Validate configuration
-    config.validate_config()
+            # Validate configuration
+        config.validate_config()
     return config
 
 # Insert the data into the SQL database - modified to use execute many

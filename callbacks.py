@@ -1,9 +1,9 @@
 import dash
+from dash import callback
 from dash.dependencies import Input, Output, State
-from app import app
 
 # Callbacks for modal functionality
-@app.callback(
+@callback(
     Output("create-group-modal", "is_open"),
     [Input("create-group-btn", "n_clicks"), 
      Input("new-group-btn", "n_clicks"),
@@ -17,7 +17,7 @@ def toggle_modal(n1, n2, n3, n4, n5, is_open):
         return not is_open
     return is_open
 
-@app.callback(
+@callback(
     [Output("success-modal", "is_open"),
      Output("create-group-modal", "is_open", allow_duplicate=True)],
     [Input("save-group", "n_clicks")],
@@ -30,7 +30,7 @@ def show_success_modal(n, success_open, group_open):
         return True, False
     return success_open, group_open
 
-@app.callback(
+@callback(
     Output("success-modal", "is_open", allow_duplicate=True),
     [Input("close-success", "n_clicks")],
     [State("success-modal", "is_open")],
@@ -41,9 +41,7 @@ def close_success_modal(n, is_open):
         return False
     return is_open
 
-
-# Add this to your existing callbacks
-@app.callback(
+@callback(
     Output("url", "pathname"),
     Input("session-store", "clear_data"),
     prevent_initial_call=True

@@ -343,10 +343,10 @@ def display_page(pathname, session_data, error_data):
         )
     ])
 
-# Import callbacks
-# import callbacks
+# Import callbacks after app is fully initialized
+import callbacks
 
-# callbacks 
+# callbacks
 
 
 

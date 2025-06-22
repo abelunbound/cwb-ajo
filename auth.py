@@ -6,7 +6,8 @@ import re
 SESSION_TIMEOUT = 0.5 * 60 * 60  # in seconds
 
 
-# Mock user database - replace with real database in production
+# DEPRECATED: Mock user database - replaced with PostgreSQL in Task 12
+# Kept for reference and migration purposes
 USERS_DB = {
     'demo@example.com': {
         'password': generate_password_hash('password123'),
@@ -55,7 +56,7 @@ def validate_password_strength(password):
     }
 
 def register_user(email, password, password_confirm, name):
-    """Register a new user with password validation.
+    """Register a new user with password validation using PostgreSQL.
     
     Args:
         email (str): User's email address
@@ -66,9 +67,8 @@ def register_user(email, password, password_confirm, name):
     Returns:
         dict: Registration result with 'success' boolean and 'error' message
     """
-    # Check if user already exists
-    if email in USERS_DB:
-        return {'success': False, 'error': 'User already exists'}
+    # Import here to avoid circular imports
+    from functions.user_service import create_user
     
     # Validate password confirmation
     if password != password_confirm:
@@ -79,17 +79,22 @@ def register_user(email, password, password_confirm, name):
     if not password_validation['valid']:
         return {'success': False, 'error': '; '.join(password_validation['errors'])}
     
-    # Create new user
-    USERS_DB[email] = {
-        'password': generate_password_hash(password),
-        'name': name,
-        'created': '2025-01-01 00:00:00'  # TODO: Use actual timestamp
-    }
+    # Create user in database
+    password_hash = generate_password_hash(password)
+    result = create_user(
+        email=email,
+        password_hash=password_hash,
+        full_name=name,
+        verification_status='unverified'
+    )
     
-    return {'success': True, 'error': None}
+    if result['success']:
+        return {'success': True, 'error': None, 'user_id': result['user_id']}
+    else:
+        return {'success': False, 'error': result['error']}
 
 def validate_user(email, password):
-    """Validate user credentials and return user data if valid.
+    """Validate user credentials using PostgreSQL and return user data if valid.
     
     Args:
         email (str): User's email address
@@ -98,16 +103,42 @@ def validate_user(email, password):
     Returns:
         dict or None: User data if valid, None if invalid
     """
-    # Check if user exists
-    if email not in USERS_DB:
-        return None
+    # Import here to avoid circular imports
+    from functions.user_service import authenticate_user
     
-    # Check password
-    if not check_password_hash(USERS_DB[email]['password'], password):
-        return None
+    return authenticate_user(email, password)
+
+# Backward compatibility functions for migration
+def migrate_users_to_database():
+    """Migrate users from in-memory USERS_DB to PostgreSQL database.
     
-    # Return user info (excluding password)
-    return {
-        'email': email,
-        'name': USERS_DB[email]['name']
-    }
+    Returns:
+        dict: Migration result
+    """
+    from functions.user_service import migrate_demo_users
+    return migrate_demo_users()
+
+def get_user_profile(user_id):
+    """Get user profile by ID.
+    
+    Args:
+        user_id (int): User's database ID
+        
+    Returns:
+        dict or None: User profile data
+    """
+    from functions.user_service import get_user_by_id
+    return get_user_by_id(user_id)
+
+def update_user_profile(user_id, **kwargs):
+    """Update user profile fields.
+    
+    Args:
+        user_id (int): User's database ID
+        **kwargs: Fields to update
+        
+    Returns:
+        dict: Update result
+    """
+    from functions.user_service import update_user_profile as update_profile
+    return update_profile(user_id, **kwargs)

@@ -179,6 +179,40 @@ def get_db_connection():
         print(f"Configuration error: {error}")
         return None
 
+def get_ajo_db_connection():
+    """Create a database connection to the Ajo platform database.
+    
+    Establishes a PostgreSQL database connection to the ajo-platform-db
+    using credentials from the configuration system. This is specifically
+    for Ajo-related functionality (groups, members, contributions, etc.).
+    
+    Returns:
+        psycopg2.connection: Database connection object or None if connection fails
+        
+    Raises:
+        psycopg2.Error: Database connection errors are caught and logged
+        ValueError: Configuration validation errors are caught and logged
+    """
+    try:
+        config = get_config()
+        
+        connection = psycopg2.connect(
+            dbname=config.AJO_DB_NAME,
+            user=config.AJO_DB_USER,
+            password=config.AJO_DB_PASSWORD,
+            host=config.AJO_DB_HOST,
+            port=config.AJO_DB_PORT
+        )
+        print(f"\nConnected to Ajo database...'{config.AJO_DB_NAME}'")
+        return connection 
+    
+    except psycopg2.Error as error:
+        print(f"Error connecting to the Ajo database: {error}")
+        return None
+    except ValueError as error:
+        print(f"Configuration error: {error}")
+        return None
+
 def insert_data_into_sql_data_base(table_query, insert_query, values_list):
     """
     Insert data into the database using prepared SQL components.

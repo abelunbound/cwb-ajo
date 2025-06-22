@@ -7,7 +7,7 @@ for all environment-specific configuration classes.
 import os
 from dotenv import load_dotenv
 
-# Load environment variables at module level
+# Load environment variables from .env file in root directory
 load_dotenv()
 
 
@@ -54,6 +54,27 @@ class BaseConfig:
     def DB_PORT(self):
         return os.getenv('DB_PORT', '5432')
     
+    # Ajo Database Configuration - loaded dynamically
+    @property
+    def AJO_DB_NAME(self):
+        return os.getenv('AJO_DB_NAME')
+    
+    @property
+    def AJO_DB_USER(self):
+        return os.getenv('AJO_DB_USER')
+    
+    @property
+    def AJO_DB_PASSWORD(self):
+        return os.getenv('AJO_DB_PASSWORD')
+    
+    @property
+    def AJO_DB_HOST(self):
+        return os.getenv('AJO_DB_HOST')
+    
+    @property
+    def AJO_DB_PORT(self):
+        return os.getenv('AJO_DB_PORT', '5432')
+    
     # Application Configuration
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     DEBUG = False
@@ -71,14 +92,25 @@ class BaseConfig:
         Raises:
             ValueError: If any required environment variables are missing
         """
-        required_vars = ['DB_NAME', 'DB_USER', 'DB_PASSWORD', 'DB_HOST']
-        missing_vars = []
+        # CWB Database (finhealth) - required
+        cwb_required_vars = ['DB_NAME', 'DB_USER', 'DB_PASSWORD', 'DB_HOST']
+        missing_cwb_vars = []
         
-        for var in required_vars:
+        for var in cwb_required_vars:
             if not getattr(self, var):
-                missing_vars.append(var)
+                missing_cwb_vars.append(var)
         
-        if missing_vars:
-            raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
+        # Ajo Database - required for Ajo functionality
+        ajo_required_vars = ['AJO_DB_NAME', 'AJO_DB_USER', 'AJO_DB_PASSWORD', 'AJO_DB_HOST']
+        missing_ajo_vars = []
+        
+        for var in ajo_required_vars:
+            if not getattr(self, var):
+                missing_ajo_vars.append(var)
+        
+        # Report missing variables
+        all_missing = missing_cwb_vars + missing_ajo_vars
+        if all_missing:
+            raise ValueError(f"Missing required environment variables: {', '.join(all_missing)}")
         
         return True 

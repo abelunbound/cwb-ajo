@@ -31,7 +31,7 @@ def create_header():
                                 className="d-flex",
                                 children=[
                                     dbc.Button("Profile", color="", className="btn-outline-primary me-2", href="/profile"),
-                                    dbc.Button("+ Create Group", color="primary", className="d-none", id="create-group-btn"),
+                                    dbc.Button("+ Create Group", color="primary", className="d-none", id={"type": "create-group-trigger", "location": "navbar"}),
                                     dbc.Button("Logout", color="primary", className="", id="logout-test"),
                                 ]
                             )

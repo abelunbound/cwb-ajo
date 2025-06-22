@@ -1,6 +1,5 @@
 import dash
-from dash import callback, html
-from dash.dependencies import Input, Output, State, ALL
+from dash import callback, html, Input, Output, State, ALL
 import dash_bootstrap_components as dbc
 from datetime import datetime, date, timedelta
 from decimal import Decimal
@@ -9,24 +8,25 @@ import json
 # Group Modal Toggle Callbacks
 @callback(
     Output("create-group-modal", "is_open"),
-    [Input("create-group-btn", "n_clicks"), 
-     Input("new-group-btn", "n_clicks"),
-     Input("create-group-card", "n_clicks"),
+    [Input({"type": "create-group-trigger", "location": ALL}, "n_clicks"),
      Input("cancel-group-btn", "n_clicks")],
     [State("create-group-modal", "is_open")],
     prevent_initial_call=True
 )
-def toggle_group_modal(create_clicks, new_clicks, card_clicks, cancel_clicks, is_open):
+def toggle_group_modal(all_create_clicks, cancel_clicks, is_open):
     """Toggle the create group modal when any trigger button is clicked."""
     ctx = dash.callback_context
     if not ctx.triggered:
         return is_open
     
-    print(f"DEBUG: Modal toggle callback triggered! create_clicks={create_clicks}, is_open={is_open}")
+    print(f"DEBUG: Modal toggle callback triggered! all_create_clicks={all_create_clicks}, is_open={is_open}")
     print(f"DEBUG: Triggered button: {ctx.triggered[0]['prop_id']}")
     
-    # If any button was clicked, toggle the modal
-    if any([create_clicks, new_clicks, card_clicks, cancel_clicks]):
+    # Check if any create-group button was clicked
+    any_create_clicked = any(clicks for clicks in all_create_clicks if clicks)
+    
+    # If any create button or cancel button was clicked, toggle the modal
+    if any_create_clicked or cancel_clicks:
         return not is_open
     return is_open
 

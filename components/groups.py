@@ -17,7 +17,7 @@ def create_groups_section():
                 className="section-header",
                 children=[
                     html.H2("My Ajo Groups", className="section-title"),
-                    dbc.Button("+ New Group", color="primary", id="new-group-btn"),
+                    dbc.Button("+ New Group", color="primary", id={"type": "create-group-trigger", "location": "groups-section"}),
                 ]
             ),
             # Group cards
@@ -259,7 +259,7 @@ def create_groups_section():
                         children=[
                             html.Div(
                                 className="create-group",
-                                id="create-group-card",
+                                id={"type": "create-group-trigger", "location": "groups-card"},
                                 children=[
                                     plus_icon,
                                     html.Span("Create New Ajo Group", className="create-group-text mt-2"),

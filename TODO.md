@@ -85,6 +85,20 @@
 - [ ] Add password strength meter to UI for better user experience
 - [ ] Add form validation feedback in real-time (before submission)
 
+### Group Creation Error Handling - Technical Debt
+**Issue:** Misleading error messages mask database connectivity problems
+- **Problem**: When internet/database connection fails during group creation, the system shows "User with email {email} not found" instead of indicating a connection problem
+- **Root Cause**: `get_user_id_by_email()` in `services/group_service.py` returns `None` for both "user not found" and "database connection failed" scenarios
+- **Impact**: Users think their account doesn't exist when the real issue is network connectivity
+- **Discovery**: Found during group creation testing when internet was disconnected
+- **Current Behavior**: `create_group()` always interprets `None` result as "user not found"
+- **Expected Behavior**: Should distinguish between:
+  - "Unable to access user database. Please check your internet connection."
+  - "User account not found. Please ensure you're logged in correctly."
+  - "Database error occurred. Please try again later."
+- **Files Affected**: `services/group_service.py` lines 127-150 (get_user_id_by_email) and lines 175-180 (create_group)
+- **Priority**: MEDIUM - Affects user experience during network issues
+
 ## Security Improvements
 
 ### Database Connection Security

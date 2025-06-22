@@ -136,6 +136,7 @@ import uuid
 
 # Import authentication components
 from components.login import create_login_layout
+from components.modals import create_group_modal, create_success_modal
 from auth import USERS_DB, SESSION_TIMEOUT, validate_user
 
 
@@ -248,6 +249,7 @@ def serve_layout():
         # Session stores
         dcc.Store(id='session-store', storage_type='session'),
         dcc.Store(id='error-store', storage_type='memory'),
+        dcc.Store(id='auth-mode-store', storage_type='memory', data={'mode': 'login'}),
         
         # Conditional content based on authentication
         html.Div(id='page-content')
@@ -305,9 +307,12 @@ def logout(n_clicks):
     Output('page-content', 'children'),
     [Input('url', 'pathname'),
      Input('session-store', 'data'),
-     Input('error-store', 'data')]
+     Input('error-store', 'data'),
+     Input('auth-mode-store', 'data')],
+    prevent_initial_call=False
 )
-def display_page(pathname, session_data, error_data):
+def display_page(pathname, session_data, error_data, auth_mode_data):
+    """Display appropriate page content based on authentication and mode."""
     error_message = ""
     if error_data and 'error' in error_data:
         error_message = error_data['error']
@@ -319,9 +324,12 @@ def display_page(pathname, session_data, error_data):
         if time.time() - session_data.get('time', 0) <= SESSION_TIMEOUT:
             is_authenticated = True
     
-    # If not authenticated, always show login page
+    # If not authenticated, show login/register page based on mode
     if not is_authenticated:
-        return create_login_layout(error_message)
+        auth_mode = 'login'  # default mode
+        if auth_mode_data and 'mode' in auth_mode_data:
+            auth_mode = auth_mode_data['mode']
+        return create_login_layout(error_message, auth_mode)
     
     # If authenticated, show the app with header and page content
     return html.Div([
@@ -340,7 +348,11 @@ def display_page(pathname, session_data, error_data):
                     ]
                 )
             ]
-        )
+        ),
+        
+        # Modals (must be in layout to be controlled by callbacks)
+        create_group_modal(),
+        create_success_modal()
     ])
 
 # Import callbacks after app is fully initialized

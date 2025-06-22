@@ -1,5 +1,18 @@
 # Pending Tasks
 
+## Technical Debt from Task Implementation
+
+### Task 2: Enhanced Password Security - Technical Debt
+- [x] ~~Add browser interface for registration~~ - COMPLETED
+- [x] ~~Add password confirmation field~~ - COMPLETED  
+- [x] ~~Add mode switching between login/register~~ - COMPLETED
+- [ ] Replace hardcoded timestamp in `register_user()` with actual datetime
+- [ ] Move from in-memory USERS_DB to proper database storage
+- [ ] Add email format validation to registration process
+- [ ] Consider adding password history to prevent reuse
+- [ ] Add password strength meter to UI for better user experience
+- [ ] Add form validation feedback in real-time (before submission)
+
 ## Security Improvements
 
 ### Database Connection Security

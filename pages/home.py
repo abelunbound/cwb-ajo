@@ -43,7 +43,6 @@ from dash.dependencies import Input, Output, State
 from components.dashboard_cards import create_dashboard_cards
 from components.groups import create_groups_section
 from components.activity import create_activity_section
-from components.modals import create_group_modal, create_success_modal
 
 # Register the page
 dash.register_page(__name__, path="/", title="Dashboard | Ajo", name="Dashboard")
@@ -73,10 +72,6 @@ def layout():
         
         # Activity Section
         create_activity_section(),
-        
-        # Modals
-        create_group_modal(),
-        create_success_modal(),
     ])
 
 # # Callback to update the dashboard header with user's name

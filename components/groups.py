@@ -94,7 +94,9 @@ def create_groups_section():
                                     html.Div(
                                         className="text-end",
                                         children=[
-                                            dbc.Button("View Details", outline=True, color="primary"),
+                                            dbc.Button("View Details", outline=True, color="primary", className="me-2"),
+                                            dbc.Button("Invite Member", color="success", size="sm", 
+                                                     id={"type": "invite-member-btn", "group_id": 1})
                                         ]
                                     ),
                                 ]
@@ -170,7 +172,9 @@ def create_groups_section():
                                     html.Div(
                                         className="text-end",
                                         children=[
-                                            dbc.Button("View Details", outline=True, color="primary"),
+                                            dbc.Button("View Details", outline=True, color="primary", className="me-2"),
+                                            dbc.Button("Invite Member", color="success", size="sm", 
+                                                     id={"type": "invite-member-btn", "group_id": 2})
                                         ]
                                     ),
                                 ]
@@ -245,7 +249,9 @@ def create_groups_section():
                                     html.Div(
                                         className="text-end",
                                         children=[
-                                            dbc.Button("View Details", outline=True, color="primary"),
+                                            dbc.Button("View Details", outline=True, color="primary", className="me-2"),
+                                            dbc.Button("Invite Member", color="success", size="sm", 
+                                                     id={"type": "invite-member-btn", "group_id": 3})
                                         ]
                                     ),
                                 ]

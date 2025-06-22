@@ -817,3 +817,235 @@ def handle_direct_join_request(join_clicks_list, session_data):
             return False, "", f"Error: {str(e)}", True, "danger"
     
     return False, "", "", False, "info"
+
+# ==============================
+# TASK 29: GROUP INVITATION SYSTEM CALLBACKS
+# ==============================
+
+# Import the new modals and functions
+from components.modals import create_invitation_modal, create_invitation_success_modal
+from functions.database import (
+    create_group_invitation, get_invitation_by_code, 
+    update_invitation_status, add_user_to_group, get_group_invitations
+)
+from pages.invite import (
+    create_valid_invitation_layout, create_invalid_invitation_layout,
+    create_expired_invitation_layout, create_already_responded_layout
+)
+
+# Callback to open invitation modal
+@callback(
+    Output("invitation-modal", "is_open"),
+    [Input({"type": "invite-member-btn", "group_id": ALL}, "n_clicks")],
+    [State("invitation-modal", "is_open")],
+    prevent_initial_call=True
+)
+def toggle_invitation_modal(invite_clicks_list, is_open):
+    """Toggle invitation modal when invite button is clicked."""
+    if any(clicks for clicks in invite_clicks_list if clicks):
+        return not is_open
+    return is_open
+
+# Callback to handle invitation creation
+@callback(
+    [Output("invitation-success-modal", "is_open"),
+     Output("invitation-modal", "is_open", allow_duplicate=True),
+     Output("invitation-link-display", "value"),
+     Output("invitation-recipient-email", "children"),
+     Output("invitation-form-alert", "children")],
+    [Input("send-invitation-btn", "n_clicks")],
+    [State("invitation-email-input", "value"),
+     State("invitation-message-input", "value"),
+     State("session-store", "data")],
+    prevent_initial_call=True
+)
+def handle_invitation_creation(n_clicks, email, message, session_data):
+    """Handle creation and sending of group invitations."""
+    if not n_clicks:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+    
+    # Validate user is logged in
+    if not session_data or not session_data.get('logged_in'):
+        alert = dbc.Alert("You must be logged in to send invitations", color="danger")
+        return False, True, "", "", alert
+    
+    # Validate email
+    if not email or '@' not in email:
+        alert = dbc.Alert("Please enter a valid email address", color="danger")
+        return False, True, "", "", alert
+    
+    # For MVP, use dummy group ID (1) and current user ID
+    group_id = 1  # This should come from the actual group context
+    inviter_user_id = session_data.get('user_info', {}).get('id', 1)
+    
+    # Create invitation
+    invitation = create_group_invitation(group_id, inviter_user_id, email)
+    
+    if invitation:
+        # Generate invitation link
+        invitation_link = f"https://your-app.com/invite/{invitation['invitation_code']}"
+        
+        return True, False, invitation_link, email, ""
+    else:
+        alert = dbc.Alert("Failed to create invitation. Please try again.", color="danger")
+        return False, True, "", "", alert
+
+# Callback to load invitation details on invite page
+@callback(
+    Output("invitation-content", "children"),
+    [Input("invitation-code-store", "data")],
+    prevent_initial_call=False
+)
+def load_invitation_details(invitation_code):
+    """Load and display invitation details."""
+    if not invitation_code:
+        return create_invalid_invitation_layout("No invitation code provided")
+    
+    # Get invitation from database
+    invitation = get_invitation_by_code(invitation_code)
+    
+    if not invitation:
+        return create_invalid_invitation_layout("Invitation not found")
+    
+    # Check invitation status
+    if invitation['status'] == 'expired':
+        return create_expired_invitation_layout()
+    elif invitation['status'] in ['accepted', 'declined']:
+        return create_already_responded_layout(invitation['status'])
+    elif invitation['status'] != 'pending':
+        return create_invalid_invitation_layout("Invalid invitation status")
+    
+    # Show valid invitation
+    return create_valid_invitation_layout(invitation)
+
+# Callback to handle invitation acceptance/decline
+@callback(
+    Output("invitation-action-feedback", "children"),
+    [Input("accept-invitation-btn", "n_clicks"),
+     Input("decline-invitation-btn", "n_clicks")],
+    [State("invitation-code-store", "data"),
+     State("session-store", "data")],
+    prevent_initial_call=True
+)
+def handle_invitation_response(accept_clicks, decline_clicks, invitation_code, session_data):
+    """Handle invitation acceptance or decline."""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return ""
+    
+    # Determine which button was clicked
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    
+    if not session_data or not session_data.get('logged_in'):
+        return dbc.Alert(
+            [
+                html.P("You must be logged in to respond to invitations."),
+                dbc.Button("Login", href="/", color="primary", size="sm")
+            ],
+            color="warning"
+        )
+    
+    # Get invitation details
+    invitation = get_invitation_by_code(invitation_code)
+    if not invitation or invitation['status'] != 'pending':
+        return dbc.Alert("Invalid or expired invitation", color="danger")
+    
+    # Process response
+    if 'accept-invitation-btn' in button_id:
+        # Accept invitation
+        success = update_invitation_status(invitation_code, 'accepted')
+        if success:
+            # Add user to group
+            user_id = session_data.get('user_info', {}).get('id', 1)
+            group_added = add_user_to_group(user_id, invitation['group_id'])
+            
+            if group_added:
+                return dbc.Alert(
+                    [
+                        html.I(className="fas fa-check-circle me-2"),
+                        html.Strong("Welcome to the group! "),
+                        f"You have successfully joined {invitation['group_name']}.",
+                        html.Br(),
+                        dbc.Button("View My Groups", href="/groups", color="success", size="sm", className="mt-2")
+                    ],
+                    color="success"
+                )
+            else:
+                return dbc.Alert("Group is full or there was an error joining", color="danger")
+        else:
+            return dbc.Alert("Failed to accept invitation", color="danger")
+    
+    elif 'decline-invitation-btn' in button_id:
+        # Decline invitation
+        success = update_invitation_status(invitation_code, 'declined')
+        if success:
+            return dbc.Alert(
+                [
+                    html.I(className="fas fa-times-circle me-2"),
+                    "You have declined this invitation."
+                ],
+                color="info"
+            )
+        else:
+            return dbc.Alert("Failed to decline invitation", color="danger")
+    
+    return ""
+
+# Callback to close invitation success modal
+@callback(
+    Output("invitation-success-modal", "is_open", allow_duplicate=True),
+    [Input("close-invitation-success-btn", "n_clicks"),
+     Input("send-another-invitation-btn", "n_clicks")],
+    [State("invitation-success-modal", "is_open")],
+    prevent_initial_call=True
+)
+def close_invitation_success_modal(close_clicks, another_clicks, is_open):
+    """Close invitation success modal."""
+    if close_clicks or another_clicks:
+        return False
+    return is_open
+
+# Callback to reopen invitation modal for another invitation
+@callback(
+    [Output("invitation-modal", "is_open", allow_duplicate=True),
+     Output("invitation-email-input", "value"),
+     Output("invitation-message-input", "value")],
+    [Input("send-another-invitation-btn", "n_clicks")],
+    prevent_initial_call=True
+)
+def send_another_invitation(n_clicks):
+    """Reopen invitation modal for sending another invitation."""
+    if n_clicks:
+        return True, "", ""  # Open modal and clear form
+    return dash.no_update, dash.no_update, dash.no_update
+
+# Callback to copy invitation link to clipboard (client-side)
+import dash_bootstrap_components as dbc
+from dash import clientside_callback, ClientsideFunction
+
+clientside_callback(
+    """
+    function(n_clicks) {
+        if (n_clicks > 0) {
+            const linkInput = document.getElementById('invitation-link-display');
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999); // For mobile devices
+            navigator.clipboard.writeText(linkInput.value);
+            
+            // Show temporary feedback
+            const copyBtn = document.querySelector('#copy-invitation-link-btn');
+            const originalText = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+            setTimeout(() => {
+                copyBtn.innerHTML = originalText;
+            }, 2000);
+            
+            return true;
+        }
+        return false;
+    }
+    """,
+    Output("copy-invitation-link-btn", "disabled"),
+    [Input("copy-invitation-link-btn", "n_clicks")],
+    prevent_initial_call=True
+)

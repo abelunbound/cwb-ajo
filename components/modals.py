@@ -338,3 +338,156 @@ def create_success_modal():
         is_open=False,
         size="md",
     )
+
+# Task 29: Group Invitation Modal
+def create_invitation_modal():
+    """Create modal for inviting members to a group."""
+    return dbc.Modal(
+        [
+            dbc.ModalHeader(html.H5("Invite Member to Group", className="modal-title")),
+            dbc.ModalBody(
+                [
+                    html.Div(
+                        id="invitation-group-info",
+                        className="mb-3 p-3 bg-light rounded",
+                        children=[
+                            html.H6("Group: Loading...", id="invitation-group-name"),
+                            html.P("Loading group details...", id="invitation-group-details", className="text-muted mb-0")
+                        ]
+                    ),
+                    html.Div(
+                        className="form-group",
+                        children=[
+                            html.Label("Email Address *", className="form-label"),
+                            dbc.Input(
+                                id="invitation-email-input",
+                                type="email",
+                                placeholder="Enter the email address of the person to invite",
+                                required=True,
+                                className="mb-2"
+                            ),
+                            html.Div(id="invitation-email-feedback", className="invalid-feedback")
+                        ]
+                    ),
+                    html.Div(
+                        className="form-group mt-3",
+                        children=[
+                            html.Label("Personal Message (Optional)", className="form-label"),
+                            dbc.Textarea(
+                                id="invitation-message-input",
+                                placeholder="Add a personal message to your invitation...",
+                                rows=3,
+                                className="mb-2"
+                            ),
+                            html.Small("This message will be included with the invitation link.", className="form-text text-muted")
+                        ]
+                    ),
+                    # Form validation alerts
+                    html.Div(id="invitation-form-alert", className="mt-3"),
+                ]
+            ),
+            dbc.ModalFooter(
+                [
+                    dbc.Button(
+                        "Cancel", 
+                        id="cancel-invitation-btn", 
+                        color="secondary", 
+                        className="me-2"
+                    ),
+                    dbc.Button(
+                        "Send Invitation", 
+                        id="send-invitation-btn", 
+                        color="primary",
+                        disabled=False
+                    ),
+                ]
+            ),
+        ],
+        id="invitation-modal",
+        is_open=False,
+        size="md",
+        backdrop="static",
+        keyboard=False,
+    )
+
+# Task 29: Invitation Success Modal
+def create_invitation_success_modal():
+    """Modal showing successful invitation creation with shareable link."""
+    return dbc.Modal(
+        [
+            dbc.ModalHeader(
+                html.H5("Invitation Created!", className="modal-title text-success")
+            ),
+            dbc.ModalBody(
+                [
+                    html.Div(
+                        className="text-center mb-4",
+                        children=[
+                            html.I(className="fas fa-envelope fa-3x text-success mb-3"),
+                            html.H6("Invitation created successfully!", className="mb-3"),
+                        ]
+                    ),
+                    html.Div(
+                        className="alert alert-info",
+                        children=[
+                            html.H6("Share this link with the invited member:", className="mb-2"),
+                            html.Div(
+                                className="input-group",
+                                children=[
+                                    dbc.Input(
+                                        id="invitation-link-display",
+                                        value="https://app.com/invite/inv_xxxxxxxxxx",
+                                        readonly=True,
+                                        className="form-control"
+                                    ),
+                                    dbc.Button(
+                                        [html.I(className="fas fa-copy me-1"), "Copy"],
+                                        id="copy-invitation-link-btn",
+                                        color="outline-primary",
+                                        size="sm"
+                                    )
+                                ]
+                            ),
+                            html.Small(
+                                id="invitation-expiry-info",
+                                className="form-text text-muted mt-2",
+                                children="This invitation expires in 7 days."
+                            )
+                        ]
+                    ),
+                    html.Div(
+                        id="invitation-recipient-info",
+                        className="mt-3",
+                        children=[
+                            html.P([
+                                html.Strong("Invited: "),
+                                html.Span("user@example.com", id="invitation-recipient-email")
+                            ], className="mb-1"),
+                            html.P([
+                                html.Strong("Status: "),
+                                html.Span("Pending", className="badge bg-warning", id="invitation-status-badge")
+                            ], className="mb-0")
+                        ]
+                    )
+                ]
+            ),
+            dbc.ModalFooter(
+                [
+                    dbc.Button(
+                        "Send Another Invitation", 
+                        id="send-another-invitation-btn", 
+                        color="outline-primary",
+                        className="me-2"
+                    ),
+                    dbc.Button(
+                        "Done", 
+                        id="close-invitation-success-btn", 
+                        color="primary"
+                    ),
+                ]
+            ),
+        ],
+        id="invitation-success-modal",
+        is_open=False,
+        size="md",
+    )

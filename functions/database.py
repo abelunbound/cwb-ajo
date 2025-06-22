@@ -361,3 +361,250 @@ def add_metadata_columns(df, applicant_id="123456789"):
     result_df['sn'] = range(1, len(result_df) + 1)
     
     return result_df
+
+# ==============================
+# TASK 29: GROUP INVITATION SYSTEM
+# ==============================
+
+def create_group_invitation(group_id, inviter_user_id, invitee_email):
+    """Create a new group invitation.
+    
+    Args:
+        group_id (int): ID of the group to invite to
+        inviter_user_id (int): ID of the user sending the invitation
+        invitee_email (str): Email address of the person being invited
+        
+    Returns:
+        dict: Invitation details including invitation_code, or None if error
+    """
+    try:
+        connection = get_ajo_db_connection()
+        if not connection:
+            return None
+            
+        cursor = connection.cursor()
+        
+        # First, expire old invitations automatically
+        cursor.execute("SELECT expire_old_invitations()")
+        
+        # Generate unique invitation code
+        cursor.execute("SELECT generate_invitation_code()")
+        invitation_code = cursor.fetchone()[0]
+        
+        # Set expiration to 7 days from now
+        insert_query = """
+        INSERT INTO ajo_group_invitations 
+        (group_id, inviter_user_id, invitee_email, invitation_code, expires_at) 
+        VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP + INTERVAL '7 days')
+        RETURNING id, invitation_code, expires_at
+        """
+        
+        cursor.execute(insert_query, (group_id, inviter_user_id, invitee_email, invitation_code))
+        result = cursor.fetchone()
+        
+        connection.commit()
+        
+        print(f"Created invitation: {invitation_code} for {invitee_email}")
+        
+        return {
+            'id': result[0],
+            'invitation_code': result[1],
+            'expires_at': result[2],
+            'invitee_email': invitee_email
+        }
+        
+    except psycopg2.Error as error:
+        print(f"Error creating invitation: {error}")
+        return None
+    finally:
+        if 'connection' in locals() and connection:
+            cursor.close()
+            connection.close()
+
+def get_invitation_by_code(invitation_code):
+    """Retrieve invitation details by invitation code.
+    
+    Args:
+        invitation_code (str): The unique invitation code
+        
+    Returns:
+        dict: Invitation details with group info, or None if not found
+    """
+    try:
+        connection = get_ajo_db_connection()
+        if not connection:
+            return None
+            
+        cursor = connection.cursor()
+        
+        # First, expire old invitations
+        cursor.execute("SELECT expire_old_invitations()")
+        
+        query = """
+        SELECT 
+            i.id, i.group_id, i.inviter_user_id, i.invitee_email,
+            i.invitation_code, i.status, i.expires_at, i.created_at,
+            g.name as group_name, g.description as group_description,
+            g.contribution_amount, g.frequency, g.duration_months,
+            g.max_members,
+            (SELECT COUNT(*) FROM group_members WHERE group_id = g.id AND status = 'active') as current_members
+        FROM ajo_group_invitations i
+        JOIN ajo_groups g ON i.group_id = g.id
+        WHERE i.invitation_code = %s
+        """
+        
+        cursor.execute(query, (invitation_code,))
+        result = cursor.fetchone()
+        
+        if not result:
+            return None
+            
+        return {
+            'id': result[0],
+            'group_id': result[1],
+            'inviter_user_id': result[2],
+            'invitee_email': result[3],
+            'invitation_code': result[4],
+            'status': result[5],
+            'expires_at': result[6],
+            'created_at': result[7],
+            'group_name': result[8],
+            'group_description': result[9],
+            'contribution_amount': result[10],
+            'frequency': result[11],
+            'duration_months': result[12],
+            'max_members': result[13],
+            'current_members': result[14]
+        }
+        
+    except psycopg2.Error as error:
+        print(f"Error retrieving invitation: {error}")
+        return None
+    finally:
+        if 'connection' in locals() and connection:
+            cursor.close()
+            connection.close()
+
+def update_invitation_status(invitation_code, status):
+    """Update the status of an invitation.
+    
+    Args:
+        invitation_code (str): The unique invitation code
+        status (str): New status ('accepted', 'declined', 'expired')
+        
+    Returns:
+        bool: True if update successful, False otherwise
+    """
+    try:
+        connection = get_ajo_db_connection()
+        if not connection:
+            return False
+            
+        cursor = connection.cursor()
+        
+        update_query = """
+        UPDATE ajo_group_invitations 
+        SET status = %s 
+        WHERE invitation_code = %s AND status = 'pending'
+        """
+        
+        cursor.execute(update_query, (status, invitation_code))
+        rows_affected = cursor.rowcount
+        
+        connection.commit()
+        
+        if rows_affected > 0:
+            print(f"Updated invitation {invitation_code} status to {status}")
+            return True
+        else:
+            print(f"No pending invitation found with code {invitation_code}")
+            return False
+        
+    except psycopg2.Error as error:
+        print(f"Error updating invitation status: {error}")
+        return False
+    finally:
+        if 'connection' in locals() and connection:
+            cursor.close()
+            connection.close()
+
+def get_group_invitations(group_id):
+    """Get all invitations for a specific group.
+    
+    Args:
+        group_id (int): ID of the group
+        
+    Returns:
+        list: List of invitation dictionaries
+    """
+    try:
+        connection = get_ajo_db_connection()
+        if not connection:
+            return []
+            
+        cursor = connection.cursor()
+        
+        # First, expire old invitations
+        cursor.execute("SELECT expire_old_invitations()")
+        
+        query = """
+        SELECT 
+            id, invitee_email, invitation_code, status, 
+            expires_at, created_at, accepted_at, declined_at
+        FROM ajo_group_invitations 
+        WHERE group_id = %s 
+        ORDER BY created_at DESC
+        """
+        
+        cursor.execute(query, (group_id,))
+        results = cursor.fetchall()
+        
+        invitations = []
+        for row in results:
+            invitations.append({
+                'id': row[0],
+                'invitee_email': row[1],
+                'invitation_code': row[2],
+                'status': row[3],
+                'expires_at': row[4],
+                'created_at': row[5],
+                'accepted_at': row[6],
+                'declined_at': row[7]
+            })
+            
+        return invitations
+        
+    except psycopg2.Error as error:
+        print(f"Error retrieving group invitations: {error}")
+        return []
+    finally:
+        if 'connection' in locals() and connection:
+            cursor.close()
+            connection.close()
+
+def add_user_to_group(user_id, group_id):
+    """Add a user to a group (for invitation acceptance).
+    
+    Args:
+        user_id (int): ID of the user to add
+        group_id (int): ID of the group to add user to
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        # Use the existing group membership service
+        from functions.group_membership_service import add_member_to_group
+        
+        result = add_member_to_group(group_id, user_id, role='member')
+        
+        if result['success']:
+            print(f"Added user {user_id} to group {group_id} at position {result['payment_position']}")
+            return True
+        else:
+            print(f"Failed to add user to group: {result['error']}")
+            return False
+        
+    except Exception as error:
+        print(f"Error adding user to group: {error}")
+        return False

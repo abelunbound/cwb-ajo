@@ -136,7 +136,7 @@ import uuid
 
 # Import authentication components
 from components.login import create_login_layout
-from components.modals import create_group_modal, create_success_modal
+from components.modals import create_group_modal, create_success_modal, create_invitation_modal, create_invitation_success_modal
 from auth import USERS_DB, SESSION_TIMEOUT, validate_user
 
 
@@ -352,7 +352,10 @@ def display_page(pathname, session_data, error_data, auth_mode_data):
         
         # Modals (must be in layout to be controlled by callbacks)
         create_group_modal(),
-        create_success_modal()
+        create_success_modal(),
+        # Task 29: Invitation system modals
+        create_invitation_modal(),
+        create_invitation_success_modal()
     ])
 
 # Import callbacks after app is fully initialized

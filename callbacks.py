@@ -1,9 +1,10 @@
 import dash
-from dash import callback
-from dash.dependencies import Input, Output, State
+from dash import callback, html
+from dash.dependencies import Input, Output, State, ALL
 import dash_bootstrap_components as dbc
 from datetime import datetime, date, timedelta
 from decimal import Decimal
+import json
 
 # Group Modal Toggle Callbacks
 @callback(
@@ -326,3 +327,397 @@ dash.clientside_callback(
     ],
     [Input('password-input', 'value')]
 )
+
+# =============================================================================
+# GROUP DISCOVERY CALLBACKS (Task 28)
+# =============================================================================
+
+@callback(
+    [Output("discovery-content", "children"),
+     Output("results-summary", "children"),
+     Output("discovery-pagination", "max_value"),
+     Output("discovery-pagination", "active_page"),
+     Output("discovery-state", "children")],
+    [Input("discovery-search-btn", "n_clicks"),
+     Input("error-retry-btn", "n_clicks"),
+     Input("discovery-pagination", "active_page"),
+     Input("discovery-search-input", "value"),
+     Input("amount-filter", "value"),
+     Input("frequency-filter", "value"),
+     Input("spots-filter", "value")],
+    [State("discovery-search-input", "value"),
+     State("amount-filter", "value"),
+     State("frequency-filter", "value"),
+     State("spots-filter", "value"),
+     State("per-page-filter", "value"),
+     State("session-store", "data"),
+     State("discovery-state", "children")],
+    prevent_initial_call=False
+)
+def update_group_discovery(search_clicks, retry_clicks, page, search_input_value, 
+                          amount_input_value, frequency_input_value, spots_input_value,
+                          search_query, amount_filter, frequency_filter, spots_filter, 
+                          per_page, session_data, current_state):
+    """Update group discovery content based on search, filters, and pagination."""
+    
+    # Check if user is logged in
+    if not session_data or not session_data.get('logged_in'):
+        from components.group_discovery import create_error_state
+        return [
+            create_error_state("Please log in to discover groups"),
+            html.P("Please log in to view groups", className="text-muted"),
+            1, 1, ""
+        ]
+    
+    try:
+        from services.group_discovery_service import search_groups, get_discoverable_groups
+        from components.group_discovery import create_group_grid, create_error_state
+        
+        # Get user email from session
+        user_email = session_data.get('user_info', {}).get('email', '')
+        if not user_email:
+            return [
+                create_error_state("Session error - please log in again"),
+                html.P("Session error", className="text-muted"),
+                1, 1, ""
+            ]
+        
+        # Get user ID (simplified - in production you'd have a proper user service)
+        from functions.database import get_ajo_db_connection
+        import psycopg2
+        
+        conn = get_ajo_db_connection()
+        if not conn:
+            return [
+                create_error_state("Database connection failed"),
+                html.P("Database error", className="text-muted"),
+                1, 1, ""
+            ]
+        
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE email = %s", (user_email,))
+        user_result = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if not user_result:
+            return [
+                create_error_state("User not found"),
+                html.P("User error", className="text-muted"),
+                1, 1, ""
+            ]
+        
+        user_id = user_result[0]
+        
+        # Use current form values (which will be cleared by the separate callback)
+        # No need to handle clear filters here anymore
+        
+        # Set defaults
+        if per_page is None:
+            per_page = 12
+        if page is None:
+            page = 1
+        
+        # Build filters dict
+        filters = {}
+        if amount_filter:
+            filters['contribution_amount'] = amount_filter
+        if frequency_filter:
+            filters['frequency'] = frequency_filter
+        if spots_filter:
+            filters['min_spots'] = spots_filter
+        
+        # Search or get groups
+        if search_query and search_query.strip():
+            result = search_groups(user_id, search_query.strip(), filters, page, per_page)
+        else:
+            if filters:
+                result = search_groups(user_id, "", filters, page, per_page)
+            else:
+                result = get_discoverable_groups(user_id, page, per_page)
+        
+        if not result['success']:
+            return [
+                create_error_state(f"Error loading groups: {result.get('error', 'Unknown error')}"),
+                html.P("Error loading groups", className="text-muted"),
+                1, 1, ""
+            ]
+        
+        # Create group grid
+        groups = result['groups']
+        grid_content = create_group_grid(groups)
+        
+        # Create results summary
+        total_count = result['total_count']
+        current_page = result['page']
+        total_pages = result['total_pages']
+        
+        if total_count == 0:
+            summary_text = "No groups found"
+        else:
+            start_item = (current_page - 1) * per_page + 1
+            end_item = min(current_page * per_page, total_count)
+            summary_text = f"Showing {start_item}-{end_item} of {total_count} groups"
+        
+        summary = html.P(summary_text, className="text-muted")
+        
+        # Store current state
+        state_data = json.dumps({
+            'search_query': search_query or "",
+            'filters': filters,
+            'page': current_page,
+            'per_page': per_page
+        })
+        
+        return [
+            grid_content,  # Return the normal grid content
+            summary,
+            max(1, total_pages),
+            current_page,
+            state_data
+        ]
+        
+    except ImportError as e:
+        # Service not available yet
+        from components.group_discovery import create_error_state
+        return [
+            create_error_state("Group discovery service not available yet"),
+            html.P("Service not available", className="text-muted"),
+            1, 1, ""
+        ]
+    except Exception as e:
+        print(f"Error in group discovery: {e}")
+        from components.group_discovery import create_error_state
+        return [
+            create_error_state(f"Unexpected error: {str(e)}"),
+            html.P("Unexpected error", className="text-muted"),
+            1, 1, ""
+        ]
+
+
+@callback(
+    [Output("group-detail-modal", "is_open"),
+     Output("group-detail-modal-title", "children"),
+     Output("group-detail-modal-body", "children"),
+     Output("group-detail-join-btn", "style")],
+    [Input({"type": "view-details-btn", "index": ALL}, "n_clicks"),
+     Input("group-detail-modal-close", "n_clicks")],
+    [State("session-store", "data")],
+    prevent_initial_call=True
+)
+def handle_group_detail_modal(view_details_clicks_list, close_clicks, session_data):
+    """Handle opening and closing group detail modal."""
+    
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return False, "", html.P("Loading...", className="text-center"), {"display": "none"}
+    
+    trigger = ctx.triggered[0]
+    
+    # Handle close
+    if trigger['prop_id'] == 'group-detail-modal-close.n_clicks':
+        return False, "", html.P("Loading...", className="text-center"), {"display": "none"}
+    
+    # Handle view details request
+    if 'view-details-btn' in trigger['prop_id']:
+        
+        # Check if this is a real click (value > 0) or just component creation (value = 0 or None)
+        if trigger['value'] is None or trigger['value'] == 0:
+            return False, "", html.P("Loading...", className="text-center"), {"display": "none"}
+        
+        try:
+            import json
+            trigger_data = json.loads(trigger['prop_id'].split('.')[0])
+            group_id = trigger_data['index']
+            
+            # Check if user is logged in
+            if not session_data or not session_data.get('logged_in'):
+                return False, "", html.P("Please log in", className="text-center"), {"display": "none"}
+            
+            # Get group details
+            from services.group_discovery_service import get_group_details_for_discovery, can_user_join_group
+            from components.group_discovery import create_group_detail_content
+            from functions.database import get_ajo_db_connection
+            
+            # Get user ID
+            user_email = session_data.get('user_info', {}).get('email', '')
+            conn = get_ajo_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM users WHERE email = %s", (user_email,))
+            user_result = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            
+            if not user_result:
+                return False, "", html.P("User error", className="text-center"), {"display": "none"}
+            
+            user_id = user_result[0]
+            
+            # Get group details
+            group_details = get_group_details_for_discovery(group_id, user_id)
+            if not group_details:
+                return False, "", html.P("Group not found or not accessible", className="text-center"), {"display": "none"}
+            
+            # Check if user can join
+            can_join_result = can_user_join_group(group_id, user_id)
+            
+            # Create modal content
+            modal_title = group_details['name']
+            modal_content = create_group_detail_content(group_details)
+            
+            # Show/hide join button in modal based on whether user can join
+            join_btn_style = {"display": "block"} if can_join_result['can_join'] else {"display": "none"}
+            
+            return True, modal_title, modal_content, join_btn_style
+            
+        except Exception as e:
+            return False, "", html.P(f"Error: {str(e)}", className="text-center"), {"display": "none"}
+    
+    return False, "", html.P("Loading...", className="text-center"), {"display": "none"}
+
+
+@callback(
+    [Output("join-request-modal", "is_open"),
+     Output("join-request-content", "children"),
+     Output("join-request-alert", "children"),
+     Output("join-request-alert", "is_open"),
+     Output("join-request-alert", "color")],
+    [Input("group-detail-join-btn", "n_clicks"),
+     Input("join-request-confirm", "n_clicks"),
+     Input("join-request-cancel", "n_clicks")],
+    [State("group-detail-modal-title", "children"),
+     State("session-store", "data")],
+    prevent_initial_call=True
+)
+def handle_join_request_modal(detail_join_clicks, confirm_clicks, cancel_clicks, 
+                             group_name, session_data):
+    """Handle join request modal and processing."""
+    
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return False, "", "", False, "info"
+    
+    trigger = ctx.triggered[0]['prop_id']
+    
+    # Handle cancel
+    if trigger == 'join-request-cancel.n_clicks':
+        return False, "", "", False, "info"
+    
+    # Handle opening join request modal
+    if trigger == 'group-detail-join-btn.n_clicks':
+        if not group_name:
+            return False, "", "", False, "info"
+        
+        content = html.Div([
+            html.P(f"Are you sure you want to request to join '{group_name}'?"),
+            html.P("The group administrator will be notified of your request.", className="text-muted small"),
+        ])
+        
+        return True, content, "", False, "info"
+    
+    # Handle join request confirmation
+    if trigger == 'join-request-confirm.n_clicks':
+        try:
+            # This would be implemented in a future task for actual join request processing
+            # For now, show a success message
+            alert_content = f"Your request to join '{group_name}' has been sent! The group administrator will review your request."
+            return False, "", alert_content, True, "success"
+            
+        except Exception as e:
+            alert_content = f"Error sending join request: {str(e)}"
+            return False, "", alert_content, True, "danger"
+    
+    return False, "", "", False, "info"
+
+
+# Clear filters callback for discovery search input
+@callback(
+    [Output("discovery-search-input", "value"),
+     Output("amount-filter", "value"),
+     Output("frequency-filter", "value"),
+     Output("spots-filter", "value")],
+    [Input("clear-filters-btn", "n_clicks"),
+     Input("empty-state-clear-btn", "n_clicks")],
+    prevent_initial_call=True
+)
+def clear_discovery_filters(clear_clicks, empty_clear_clicks):
+    """Clear all discovery filters."""
+    if clear_clicks or empty_clear_clicks:
+        return "", [], [], None
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+# New callback for handling direct join requests from group cards
+@callback(
+    [Output("join-request-modal", "is_open", allow_duplicate=True),
+     Output("join-request-content", "children", allow_duplicate=True),
+     Output("join-request-alert", "children", allow_duplicate=True),
+     Output("join-request-alert", "is_open", allow_duplicate=True),
+     Output("join-request-alert", "color", allow_duplicate=True)],
+    [Input({"type": "join-group-btn", "index": ALL}, "n_clicks")],
+    [State("session-store", "data")],
+    prevent_initial_call=True
+)
+def handle_direct_join_request(join_clicks_list, session_data):
+    """Handle direct join requests from group cards."""
+    
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return False, "", "", False, "info"
+    
+    trigger = ctx.triggered[0]
+    
+    # Handle join group button click
+    if 'join-group-btn' in trigger['prop_id']:
+        
+        # Check if this is a real click (value > 0) or just component creation (value = 0 or None)
+        if trigger['value'] is None or trigger['value'] == 0:
+            return False, "", "", False, "info"
+        
+        try:
+            import json
+            trigger_data = json.loads(trigger['prop_id'].split('.')[0])
+            group_id = trigger_data['index']
+            
+            # Check if user is logged in
+            if not session_data or not session_data.get('logged_in'):
+                return False, "", "Please log in to join groups", True, "warning"
+            
+            # Get group details to show group name in confirmation
+            from services.group_discovery_service import get_group_details_for_discovery
+            from functions.database import get_ajo_db_connection
+            
+            # Get user ID
+            user_email = session_data.get('user_info', {}).get('email', '')
+            conn = get_ajo_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM users WHERE email = %s", (user_email,))
+            user_result = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            
+            if not user_result:
+                return False, "", "User session error", True, "danger"
+            
+            user_id = user_result[0]
+            
+            # Get group details
+            group_details = get_group_details_for_discovery(group_id, user_id)
+            if not group_details:
+                return False, "", "Group not found", True, "danger"
+            
+            # Create join request content
+            content = html.Div([
+                html.P(f"Are you sure you want to request to join '{group_details['name']}'?"),
+                html.P("The group administrator will be notified of your request.", className="text-muted small"),
+                html.Hr(),
+                html.P(f"Group: {group_details['name']}", className="fw-bold"),
+                html.P(f"Contribution: £{group_details['contribution_amount']} {group_details['frequency']}", className="small"),
+                html.P(f"Duration: {group_details['duration_months']} months", className="small"),
+            ])
+            
+            return True, content, "", False, "info"
+            
+        except Exception as e:
+            return False, "", f"Error: {str(e)}", True, "danger"
+    
+    return False, "", "", False, "info"

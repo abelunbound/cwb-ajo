@@ -12,8 +12,23 @@ def create_page_header():
     return html.Div(
         className="dashboard-header",
         children=[
-            html.H1("My Ajo Groups", className="dashboard-title"),
-            html.P("View and manage all your Ajo groups.", className="dashboard-subtitle"),
+            html.Div(
+                className="d-flex justify-content-between align-items-center mb-3",
+                children=[
+                    html.Div([
+                        html.H1("My Ajo Groups", className="dashboard-title mb-1"),
+                        html.P("View and manage all your Ajo groups.", className="dashboard-subtitle mb-0"),
+                    ]),
+                    html.Div([
+                        dbc.Button(
+                            [html.I(className="fas fa-search me-2"), "Discover Groups"],
+                            href="/discover-groups",
+                            color="outline-primary",
+                            className="me-2"
+                        ),
+                    ])
+                ]
+            ),
         ]
     )
 

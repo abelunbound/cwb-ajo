@@ -47,6 +47,31 @@
 - Audit trails with created_at/updated_at timestamps
 - Payment provider integration ready for Tasks 36-45
 
+### Task 28: Group Discovery Interface - Performance Optimization
+**🚀 RECOMMENDED IMMEDIATE FIX: Fast Modal with Progressive Enhancement**
+
+**Current Issue:**
+- Modal loading delay of ~500ms due to multiple sequential database calls:
+  1. User ID lookup from email (`SELECT id FROM users WHERE email = %s`)
+  2. Group membership check (`SELECT id FROM group_members WHERE...`)
+  3. Group details with aggregation (`SELECT ... COUNT(gm.id) ... GROUP BY ...`)
+  4. Member details fetch (`SELECT gm.role, gm.payment_position, u.full_name...`)
+  5. Join eligibility check (`can_user_join_group` - 2-3 additional queries)
+
+**Optimization Strategy: "Fast Modal with Progressive Enhancement"**
+- ✅ Store user ID in session (eliminate user lookup)
+- ✅ Use existing group data for immediate modal display
+- ✅ Fetch only member details asynchronously
+- ✅ Show loading spinner for member section only
+
+**Expected Impact:**
+- 🎯 Reduce delay from ~500ms to ~50ms (90% improvement)
+- 🎯 Maintain all functionality
+- 🎯 Require minimal code changes
+- 🎯 Improve user experience significantly
+
+**Implementation Priority:** HIGH - Quick win with major UX impact
+
 ## Technical Debt from Task Implementation
 
 ### Task 2: Enhanced Password Security - Technical Debt

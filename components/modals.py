@@ -281,7 +281,7 @@ def create_group_modal():
                     ),
                     dbc.Button(
                         "Create Group", 
-                        id="create-group-btn", 
+                        id="submit-group-btn", 
                         color="primary",
                         disabled=False
                     ),

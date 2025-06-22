@@ -22,6 +22,9 @@ def toggle_group_modal(create_clicks, new_clicks, card_clicks, cancel_clicks, is
     if not ctx.triggered:
         return is_open
     
+    print(f"DEBUG: Modal toggle callback triggered! create_clicks={create_clicks}, is_open={is_open}")
+    print(f"DEBUG: Triggered button: {ctx.triggered[0]['prop_id']}")
+    
     # If any button was clicked, toggle the modal
     if any([create_clicks, new_clicks, card_clicks, cancel_clicks]):
         return not is_open
@@ -36,11 +39,11 @@ def toggle_group_modal(create_clicks, new_clicks, card_clicks, cancel_clicks, is
      Output("duration-feedback", "children"),
      Output("max-members-feedback", "children"),
      Output("start-date-feedback", "children"),
-     Output("create-group-btn", "disabled"),
+     Output("submit-group-btn", "disabled"),
      Output("success-modal", "is_open"),
      Output("create-group-modal", "is_open", allow_duplicate=True),
      Output("success-message-text", "children")],
-    [Input("create-group-btn", "n_clicks")],
+    [Input("submit-group-btn", "n_clicks")],
     [State("group-name-input", "value"),
      State("group-description-input", "value"),
      State("contribution-amount-input", "value"),
@@ -53,9 +56,16 @@ def toggle_group_modal(create_clicks, new_clicks, card_clicks, cancel_clicks, is
 )
 def handle_group_creation(n_clicks, name, description, amount, frequency, duration, max_members, start_date, session_data):
     """Handle group creation form validation and submission."""
+    print(f"DEBUG: Group creation callback triggered! n_clicks={n_clicks}")
+    print(f"DEBUG: Form data - name='{name}', amount={amount}, frequency='{frequency}', duration={duration}")
+    print(f"DEBUG: Additional data - max_members={max_members}, start_date='{start_date}', description='{description}'")
+    print(f"DEBUG: Session data present: {session_data is not None}")
+    if session_data:
+        print(f"DEBUG: User logged in: {session_data.get('logged_in', False)}")
+    
     if not n_clicks:
         return [dash.no_update] * 11
-    
+
     # Initialize validation results
     validation_alert = ""
     name_feedback = ""
@@ -66,58 +76,114 @@ def handle_group_creation(n_clicks, name, description, amount, frequency, durati
     date_feedback = ""
     form_valid = True
     
+    print("DEBUG: Starting validation...")
+    
     # Validate required fields
     if not name or len(name.strip()) < 3:
         name_feedback = "Group name must be at least 3 characters long"
         form_valid = False
+        print(f"DEBUG: Name validation failed: '{name}'")
     elif len(name.strip()) > 100:
         name_feedback = "Group name must be less than 100 characters"
         form_valid = False
+        print(f"DEBUG: Name too long: '{name}'")
+    else:
+        print(f"DEBUG: Name validation passed: '{name}'")
     
     if not amount:
         amount_feedback = "Please select a contribution amount"
         form_valid = False
-    elif amount not in [50, 100, 500, 800]:
-        amount_feedback = "Please select a valid contribution amount"
-        form_valid = False
+        print(f"DEBUG: Amount validation failed: {amount}")
+    else:
+        try:
+            amount_int = int(amount)
+            if amount_int not in [50, 100, 500, 800]:
+                amount_feedback = "Please select a valid contribution amount"
+                form_valid = False
+                print(f"DEBUG: Amount not in valid range: {amount}")
+            else:
+                print(f"DEBUG: Amount validation passed: {amount}")
+        except (ValueError, TypeError):
+            amount_feedback = "Please select a valid contribution amount"
+            form_valid = False
+            print(f"DEBUG: Amount conversion failed: {amount} (type: {type(amount)})")
     
     if not frequency:
         frequency_feedback = "Please select a contribution frequency"
         form_valid = False
+        print(f"DEBUG: Frequency validation failed: '{frequency}'")
     elif frequency not in ["weekly", "monthly"]:
         frequency_feedback = "Please select a valid frequency"
         form_valid = False
+        print(f"DEBUG: Frequency not valid: '{frequency}'")
+    else:
+        print(f"DEBUG: Frequency validation passed: '{frequency}'")
     
     if not duration:
         duration_feedback = "Please enter the duration in months"
         form_valid = False
+        print(f"DEBUG: Duration validation failed: {duration}")
     elif not isinstance(duration, int) or duration < 3 or duration > 24:
         duration_feedback = "Duration must be between 3 and 24 months"
         form_valid = False
+        print(f"DEBUG: Duration not valid: {duration} (type: {type(duration)})")
+    else:
+        print(f"DEBUG: Duration validation passed: {duration}")
     
     if not max_members:
         members_feedback = "Please select maximum number of members"
         form_valid = False
-    elif max_members not in [5, 6, 7, 8, 9, 10]:
-        members_feedback = "Please select a valid number of members (5-10)"
-        form_valid = False
+        print(f"DEBUG: Max members validation failed: {max_members}")
+    else:
+        try:
+            max_members_int = int(max_members)
+            if max_members_int not in [5, 6, 7, 8, 9, 10]:
+                members_feedback = "Please select a valid number of members (5-10)"
+                form_valid = False
+                print(f"DEBUG: Max members not valid: {max_members}")
+            else:
+                print(f"DEBUG: Max members validation passed: {max_members}")
+        except (ValueError, TypeError):
+            members_feedback = "Please select a valid number of members (5-10)"
+            form_valid = False
+            print(f"DEBUG: Max members conversion failed: {max_members} (type: {type(max_members)})")
     
     if not start_date:
         date_feedback = "Please select a start date"
         form_valid = False
+        print(f"DEBUG: Start date validation failed: '{start_date}'")
     else:
         try:
-            start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
+            # Try multiple date formats to handle browser localization
+            start_date_obj = None
+            date_formats = ["%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%Y/%m/%d"]
+            
+            for fmt in date_formats:
+                try:
+                    start_date_obj = datetime.strptime(start_date, fmt).date()
+                    print(f"DEBUG: Date parsed successfully with format {fmt}: {start_date_obj}")
+                    break
+                except ValueError:
+                    continue
+            
+            if start_date_obj is None:
+                raise ValueError(f"Unable to parse date: {start_date}")
+            
             today = date.today()
             if start_date_obj <= today:
                 date_feedback = "Start date must be in the future"
                 form_valid = False
+                print(f"DEBUG: Start date not in future: {start_date_obj} vs {today}")
             elif start_date_obj > today + timedelta(days=90):
                 date_feedback = "Start date cannot be more than 90 days in the future"
                 form_valid = False
-        except ValueError:
-            date_feedback = "Please enter a valid date"
+                print(f"DEBUG: Start date too far in future: {start_date_obj}")
+            else:
+                print(f"DEBUG: Start date validation passed: {start_date_obj}")
+        except ValueError as e:
+            date_feedback = f"Please enter a valid date (received: {start_date})"
             form_valid = False
+            print(f"DEBUG: Date parsing error: {e}")
     
     # Check if user is logged in
     if not session_data or not session_data.get('logged_in'):
@@ -127,6 +193,11 @@ def handle_group_creation(n_clicks, name, description, amount, frequency, durati
             dismissable=True
         )
         form_valid = False
+        print("DEBUG: User not logged in")
+    else:
+        print("DEBUG: User login validation passed")
+    
+    print(f"DEBUG: Overall form validation result: {form_valid}")
     
     if not form_valid:
         if not validation_alert:
@@ -135,10 +206,13 @@ def handle_group_creation(n_clicks, name, description, amount, frequency, durati
                 color="danger",
                 dismissable=True
             )
+        print("DEBUG: Returning validation errors")
         return [
             validation_alert, name_feedback, amount_feedback, frequency_feedback,
             duration_feedback, members_feedback, date_feedback, False, False, False, ""
         ]
+    
+    print("DEBUG: All validation passed, attempting to create group...")
     
     # If validation passes, create the group
     try:
@@ -147,6 +221,21 @@ def handle_group_creation(n_clicks, name, description, amount, frequency, durati
         
         # Get user info from session
         user_email = session_data.get('user_info', {}).get('email', '')
+        print(f"DEBUG: User email: {user_email}")
+        
+        # Parse start date with multiple format support
+        start_date_obj = None
+        date_formats = ["%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%Y/%m/%d"]
+        
+        for fmt in date_formats:
+            try:
+                start_date_obj = datetime.strptime(start_date, fmt).date()
+                break
+            except ValueError:
+                continue
+        
+        if start_date_obj is None:
+            raise ValueError(f"Unable to parse start date: {start_date}")
         
         # Create group data
         group_data = {
@@ -154,17 +243,21 @@ def handle_group_creation(n_clicks, name, description, amount, frequency, durati
             'description': description.strip() if description else None,
             'contribution_amount': Decimal(str(amount)),
             'frequency': frequency,
-            'start_date': datetime.strptime(start_date, "%Y-%m-%d").date(),
+            'start_date': start_date_obj,
             'duration_months': duration,
-            'max_members': max_members,
+            'max_members': int(max_members),
             'created_by_email': user_email
         }
         
+        print(f"DEBUG: Group data prepared: {group_data}")
+        
         # Create the group
         result = create_group(group_data)
+        print(f"DEBUG: Group creation result: {result}")
         
         if result['success']:
             success_message = f"Your group '{name}' has been created successfully! You can now invite members to join."
+            print("DEBUG: Returning success response")
             return [
                 "", "", "", "", "", "", "", False, True, False, success_message
             ]
@@ -174,6 +267,7 @@ def handle_group_creation(n_clicks, name, description, amount, frequency, durati
                 color="danger",
                 dismissable=True
             )
+            print(f"DEBUG: Group creation failed: {result.get('error', 'Unknown error')}")
             return [
                 validation_alert, "", "", "", "", "", "", False, False, True, ""
             ]
@@ -181,6 +275,7 @@ def handle_group_creation(n_clicks, name, description, amount, frequency, durati
     except ImportError:
         # If group service doesn't exist yet, show a placeholder success
         success_message = f"Group creation form validated successfully! Group '{name}' would be created with £{amount} {frequency} contributions."
+        print("DEBUG: Using placeholder success (ImportError)")
         return [
             "", "", "", "", "", "", "", False, True, False, success_message
         ]
@@ -190,6 +285,7 @@ def handle_group_creation(n_clicks, name, description, amount, frequency, durati
             color="danger",
             dismissable=True
         )
+        print(f"DEBUG: Unexpected error: {str(e)}")
         return [
             validation_alert, "", "", "", "", "", "", False, False, True, ""
         ]

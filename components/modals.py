@@ -16,18 +16,47 @@ def create_group_modal():
                                     html.Div(
                                         className="form-group mt-3",
                                         children=[
-                                            html.Label("Group Name"),
-                                            dbc.Input(type="text", placeholder="e.g. Family Savings"),
+                                            html.Label("Group Name *", className="form-label"),
+                                            dbc.Input(
+                                                id="group-name-input",
+                                                type="text", 
+                                                placeholder="e.g. Family Savings Circle",
+                                                required=True
+                                            ),
+                                            html.Div(id="group-name-feedback", className="invalid-feedback")
                                         ]
                                     ),
                                     html.Div(
                                         className="form-group mt-3",
                                         children=[
-                                            html.Label("Contribution Amount"),
+                                            html.Label("Group Description", className="form-label"),
+                                            dbc.Textarea(
+                                                id="group-description-input",
+                                                placeholder="What's the purpose of this Ajo group?", 
+                                                rows=3
+                                            ),
+                                            html.Div(id="group-description-feedback", className="invalid-feedback")
+                                        ]
+                                    ),
+                                    html.Div(
+                                        className="form-group mt-3",
+                                        children=[
+                                            html.Label("Contribution Amount *", className="form-label"),
                                             dbc.InputGroup([
                                                 dbc.InputGroupText("£"),
-                                                dbc.Input(type="number", placeholder="e.g. 100"),
+                                                dbc.Select(
+                                                    id="contribution-amount-input",
+                                                    options=[
+                                                        {"label": "£50", "value": 50},
+                                                        {"label": "£100", "value": 100},
+                                                        {"label": "£500", "value": 500},
+                                                        {"label": "£800", "value": 800},
+                                                    ],
+                                                    placeholder="Select amount",
+                                                    required=True
+                                                ),
                                             ]),
+                                            html.Div(id="contribution-amount-feedback", className="invalid-feedback")
                                         ]
                                     ),
                                     html.Div(
@@ -36,33 +65,77 @@ def create_group_modal():
                                             html.Div(
                                                 className="form-group col",
                                                 children=[
-                                                    html.Label("Contribution Frequency"),
+                                                    html.Label("Contribution Frequency *", className="form-label"),
                                                     dbc.Select(
+                                                        id="frequency-input",
                                                         options=[
                                                             {"label": "Weekly", "value": "weekly"},
                                                             {"label": "Monthly", "value": "monthly"},
-                                                            {"label": "Bi-weekly", "value": "biweekly"},
                                                         ],
-                                                        value="monthly",
+                                                        placeholder="Select frequency",
+                                                        required=True
                                                     ),
+                                                    html.Div(id="frequency-feedback", className="invalid-feedback")
                                                 ]
                                             ),
                                             html.Div(
                                                 className="form-group col",
                                                 children=[
-                                                    html.Label("Number of Members"),
-                                                    dbc.Input(type="number", placeholder="e.g. 6", min=2),
+                                                    html.Label("Duration (Months) *", className="form-label"),
+                                                    dbc.Input(
+                                                        id="duration-input",
+                                                        type="number", 
+                                                        placeholder="e.g. 12",
+                                                        min=3,
+                                                        max=24,
+                                                        required=True
+                                                    ),
+                                                    html.Small("Minimum 3 months, maximum 24 months", className="form-text text-muted"),
+                                                    html.Div(id="duration-feedback", className="invalid-feedback")
                                                 ]
                                             ),
                                         ]
                                     ),
                                     html.Div(
-                                        className="form-group mt-3",
+                                        className="form-row mt-3",
                                         children=[
-                                            html.Label("Group Description (Optional)"),
-                                            dbc.Textarea(placeholder="What's the purpose of this Ajo group?", rows=3),
+                                            html.Div(
+                                                className="form-group col",
+                                                children=[
+                                                    html.Label("Maximum Members *", className="form-label"),
+                                                    dbc.Select(
+                                                        id="max-members-input",
+                                                        options=[
+                                                            {"label": "5 members", "value": 5},
+                                                            {"label": "6 members", "value": 6},
+                                                            {"label": "7 members", "value": 7},
+                                                            {"label": "8 members", "value": 8},
+                                                            {"label": "9 members", "value": 9},
+                                                            {"label": "10 members", "value": 10},
+                                                        ],
+                                                        placeholder="Select max members",
+                                                        required=True
+                                                    ),
+                                                    html.Div(id="max-members-feedback", className="invalid-feedback")
+                                                ]
+                                            ),
+                                            html.Div(
+                                                className="form-group col",
+                                                children=[
+                                                    html.Label("Start Date *", className="form-label"),
+                                                    dbc.Input(
+                                                        id="start-date-input",
+                                                        type="date",
+                                                        required=True
+                                                    ),
+                                                    html.Small("Groups typically start within 1-2 weeks", className="form-text text-muted"),
+                                                    html.Div(id="start-date-feedback", className="invalid-feedback")
+                                                ]
+                                            ),
                                         ]
                                     ),
+                                    # Form validation alerts
+                                    html.Div(id="form-validation-alert", className="mt-3"),
                                 ],
                                 label="Details",
                                 tab_id="details",
@@ -200,42 +273,68 @@ def create_group_modal():
             ),
             dbc.ModalFooter(
                 [
-                    dbc.Button("Cancel", id="close-modal", color="secondary", className="me-2"),
-                    dbc.Button("Create Group", id="save-group", color="primary"),
+                    dbc.Button(
+                        "Cancel", 
+                        id="cancel-group-btn", 
+                        color="secondary", 
+                        className="me-2"
+                    ),
+                    dbc.Button(
+                        "Create Group", 
+                        id="create-group-btn", 
+                        color="primary",
+                        disabled=False
+                    ),
                 ]
             ),
         ],
         id="create-group-modal",
+        is_open=False,
         size="lg",
+        backdrop="static",
+        keyboard=False,
     )
 
-# Success Modal component
+# Create Success Modal component
 def create_success_modal():
     return dbc.Modal(
         [
+            dbc.ModalHeader(
+                html.H5("Group Created Successfully!", className="modal-title text-success")
+            ),
             dbc.ModalBody(
                 [
                     html.Div(
-                        className="success-container",
+                        className="text-center",
                         children=[
-                            html.Div(
-                                className="success-icon",
-                                children=[
-                                    html.I(className="fas fa-check-circle", style={"fontSize": "40px", "color": "#2ECC71"}),
-                                ]
-                            ),
-                            html.H3("Group Created Successfully!", className="success-title"),
+                            html.I(className="fas fa-check-circle fa-3x text-success mb-3"),
+                            html.H6("Your Ajo group has been created!", className="mb-3"),
                             html.P(
-                                "Your new Ajo group has been created. Invitations have been sent to all members.",
-                                className="success-message"
+                                id="success-message-text",
+                                className="text-muted",
+                                children="You can now invite members to join your group."
                             ),
-                            dbc.Button("See Group Details", color="primary", className="me-2"),
-                            dbc.Button("Close", id="close-success", color="link"),
                         ]
+                    )
+                ]
+            ),
+            dbc.ModalFooter(
+                [
+                    dbc.Button(
+                        "View Group", 
+                        id="view-group-btn", 
+                        color="primary",
+                        className="me-2"
+                    ),
+                    dbc.Button(
+                        "Close", 
+                        id="close-success-btn", 
+                        color="secondary"
                     ),
                 ]
             ),
         ],
         id="success-modal",
-        centered=True,
+        is_open=False,
+        size="md",
     )

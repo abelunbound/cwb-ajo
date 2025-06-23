@@ -4,6 +4,7 @@ import dash_bootstrap_components as dbc
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 import json
+import os
 
 # Group Modal Toggle Callbacks
 @callback(
@@ -833,20 +834,76 @@ from pages.invite import (
     create_expired_invitation_layout, create_already_responded_layout
 )
 
-# Callback to open invitation modal
+# Callback to handle invitation modal and capture group context
 @callback(
-    Output("invitation-modal", "is_open"),
+    [Output("invitation-modal", "is_open"),
+     Output({"type": "selected-group-store", "page": ALL}, "data")],
     [Input({"type": "invite-member-btn", "group_id": ALL}, "n_clicks")],
-    [State("invitation-modal", "is_open")],
+    [State("invitation-modal", "is_open"),
+     State({"type": "user-groups-store", "page": ALL}, "data"),
+     State({"type": "selected-group-store", "page": ALL}, "data")],
     prevent_initial_call=True
 )
-def toggle_invitation_modal(invite_clicks_list, is_open):
-    """Toggle invitation modal when invite button is clicked."""
-    if any(clicks for clicks in invite_clicks_list if clicks):
-        return not is_open
-    return is_open
+def toggle_invitation_modal_with_context(invite_clicks_list, is_open, user_groups_stores, existing_stores):
+    """Toggle invitation modal when invite button is clicked and capture group context."""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update, [dash.no_update] * len(existing_stores)
+    
+    # Get the triggered component info
+    triggered_prop_id = ctx.triggered[0]['prop_id']
+    triggered_value = ctx.triggered[0]['value']
+    
+    # Enhanced validation: Only proceed if this is a real user click
+    # 1. Must have a triggered component
+    # 2. The triggered value must be > 0 (actual click, not component creation)
+    # 3. Must be from an invite-member-btn
+    if not triggered_prop_id or triggered_value is None or triggered_value <= 0:
+        print(f"Invitation modal callback triggered but not from user click. Prop ID: {triggered_prop_id}, Value: {triggered_value}")
+        return dash.no_update, [dash.no_update] * len(existing_stores)
+    
+    if "invite-member-btn" not in triggered_prop_id:
+        print(f"Invitation modal callback triggered but not from invite button: {triggered_prop_id}")
+        return dash.no_update, [dash.no_update] * len(existing_stores)
+    
+    # Parse the prop_id to get group_id
+    import json
+    try:
+        # The prop_id looks like: {"index":0,"type":"invite-member-btn","group_id":68}.n_clicks
+        prop_dict = json.loads(triggered_prop_id.split('.')[0])
+        group_id = prop_dict.get('group_id')
+        
+        if not group_id:
+            print(f"No group_id found in triggered component: {triggered_prop_id}")
+            return dash.no_update, [dash.no_update] * len(existing_stores)
+        
+        # Find the group data from any of the user groups stores
+        selected_group = None
+        for groups_data in user_groups_stores:
+            if groups_data:
+                for group in groups_data:
+                    if group['group_id'] == group_id:
+                        selected_group = group
+                        break
+                if selected_group:
+                    break
+        
+        if not selected_group:
+            print(f"Group data not found for group_id: {group_id}")
+            return dash.no_update, [dash.no_update] * len(existing_stores)
+        
+        print(f"✓ Valid invitation modal trigger for group ID: {group_id} ({selected_group['group_name']})")
+        
+        # Update all existing selected-group stores
+        store_updates = [selected_group for _ in existing_stores]
+        return not is_open, store_updates
+        
+    except Exception as e:
+        print(f"Error parsing group_id from invite button: {e}")
+        print(f"Triggered prop_id: {triggered_prop_id}")
+        return dash.no_update, [dash.no_update] * len(existing_stores)
 
-# Callback to handle invitation creation
+# Callback to handle invitation creation using store data
 @callback(
     [Output("invitation-success-modal", "is_open"),
      Output("invitation-modal", "is_open", allow_duplicate=True),
@@ -856,11 +913,12 @@ def toggle_invitation_modal(invite_clicks_list, is_open):
     [Input("send-invitation-btn", "n_clicks")],
     [State("invitation-email-input", "value"),
      State("invitation-message-input", "value"),
-     State("session-store", "data")],
+     State("session-store", "data"),
+     State({"type": "selected-group-store", "page": ALL}, "data")],
     prevent_initial_call=True
 )
-def handle_invitation_creation(n_clicks, email, message, session_data):
-    """Handle creation and sending of group invitations."""
+def handle_invitation_creation_with_store(n_clicks, email, message, session_data, selected_group_stores):
+    """Handle creation and sending of group invitations using store data."""
     if not n_clicks:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
     
@@ -874,17 +932,41 @@ def handle_invitation_creation(n_clicks, email, message, session_data):
         alert = dbc.Alert("Please enter a valid email address", color="danger")
         return False, True, "", "", alert
     
-    # For MVP, use dummy group ID (1) and current user ID
-    group_id = 1  # This should come from the actual group context
+    # Get group ID from any of the selected group stores
+    selected_group = None
+    for store_data in selected_group_stores:
+        if store_data and store_data.get('group_id'):
+            selected_group = store_data
+            break
+    
+    if not selected_group or not selected_group.get('group_id'):
+        alert = dbc.Alert("No group selected. Please try again.", color="danger")
+        return False, True, "", "", alert
+    
+    group_id = selected_group['group_id']
+    group_name = selected_group.get('group_name', 'Unknown Group')
     inviter_user_id = session_data.get('user_info', {}).get('id', 1)
     
-    # Create invitation
+    print(f"Creating invitation for group ID: {group_id} ({group_name})")
+    
+    # Create invitation with actual group ID from store
     invitation = create_group_invitation(group_id, inviter_user_id, email)
     
     if invitation:
-        # Generate invitation link
-        invitation_link = f"https://your-app.com/invite/{invitation['invitation_code']}"
+        # Generate invitation link based on environment
+        # Check if we're in development or production
+        # Use DASH_ENV first (project standard), then FLASK_ENV as fallback
+        environment = os.getenv('DASH_ENV') or os.getenv('FLASK_ENV', 'production')  # Default to production for safety
         
+        if environment == 'development':
+            base_url = "http://127.0.0.1:8050"
+        else:
+            base_url = "https://your-app.com"
+        
+        invitation_link = f"{base_url}/invite/{invitation['invitation_code']}"
+        
+        print(f"Successfully created invitation for group {group_id}")
+        print(f"Environment: {environment}, Invitation link: {invitation_link}")
         return True, False, invitation_link, email, ""
     else:
         alert = dbc.Alert("Failed to create invitation. Please try again.", color="danger")

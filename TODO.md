@@ -99,6 +99,21 @@
 - **Files Affected**: `services/group_service.py` lines 127-150 (get_user_id_by_email) and lines 175-180 (create_group)
 - **Priority**: MEDIUM - Affects user experience during network issues
 
+### Task 28 - 
+- [ ] Add more details to "View Details" - Display group details (members, status, next payment, missed payments, age of members? Restart old group - member since ?? like AirBnB) 
+- [ ] View details doesnt lead to details modal in home and group.py 
+
+
+### Task 29 - 
+- [ ] Update correct error message when invites are sent and at other touch points
+- [ ] Allow users to send invites via phone number - on click of link if user is registered - sign in, else, sign up - update your profile later
+⚠️ Minor Technical Debt (Future Optimization):
+Modal loading delay (~500ms) - optimization strategy documented
+2 test failures due to Dash framework timing (doesn't affect functionality)
+
+
+
+
 ## Security Improvements
 
 ### Database Connection Security

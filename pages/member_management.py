@@ -146,22 +146,7 @@ def create_action_buttons():
         className="border-top pt-4 mt-4",
         children=[
             html.H6("Quick Actions", className="mb-3"),
-            dbc.ButtonGroup(
-                [
-                    dbc.Button(
-                        [html.I(className="fas fa-download me-2"), "Export Member List"],
-                        id="page-export-members-btn",
-                        color="success",
-                        size="sm"
-                    ),
-                    dbc.Button(
-                        [html.I(className="fas fa-refresh me-2"), "Refresh Data"],
-                        id="page-refresh-data-btn",
-                        color="outline-secondary",
-                        size="sm"
-                    )
-                ]
-            )
+            html.Div(id="member-management-action-buttons")
         ]
     )
 
@@ -185,6 +170,8 @@ def layout(group_id=None, **kwargs):
         # Store for group context
         dcc.Store(id="member-management-group-store", data={"group_id": group_id}),
         dcc.Store(id="member-management-data-store", data={}),
+        # Store for refresh triggers
+        dcc.Store(id="member-management-refresh-trigger", data={"timestamp": 0}),
         
         # Page header with breadcrumb
         create_page_header(group_id),
@@ -207,11 +194,11 @@ def layout(group_id=None, **kwargs):
      Output("member-management-member-list", "children"),
      Output("member-management-data-store", "data")],
     [Input("member-management-group-store", "data"),
-     Input("page-refresh-data-btn", "n_clicks")],
+     Input("member-management-refresh-trigger", "data")],
     [State("session-store", "data")],
     prevent_initial_call=False
 )
-def load_member_management_data(group_store, refresh_clicks, session_data):
+def load_member_management_data(group_store, refresh_trigger, session_data):
     """Load group and member data for the page."""
     if not group_store or not group_store.get("group_id"):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
@@ -363,6 +350,55 @@ def load_member_management_data(group_store, refresh_clicks, session_data):
             html.Div(),
             {}
         )
+
+# Callback to create action buttons with correct group_id
+@callback(
+    Output("member-management-action-buttons", "children"),
+    [Input("member-management-group-store", "data")],
+    prevent_initial_call=False
+)
+def create_action_buttons_with_group_id(group_store):
+    """Create action buttons with the correct group_id for navigation."""
+    if not group_store:
+        return html.Div()
+    
+    group_id = group_store.get("group_id")
+    if not group_id:
+        return html.Div()
+    
+    return dbc.ButtonGroup([
+        dbc.Button(
+            [html.I(className="fas fa-list-ol me-2"), "Manage Positions"],
+            href=f"/payment-positions/{group_id}",
+            color="primary",
+            size="sm"
+        ),
+        dbc.Button(
+            [html.I(className="fas fa-download me-2"), "Export Member List"],
+            id="page-export-members-btn",
+            color="success",
+            size="sm"
+        ),
+        dbc.Button(
+            [html.I(className="fas fa-refresh me-2"), "Refresh Data"],
+            id="page-refresh-data-btn",
+            color="outline-secondary",
+            size="sm"
+        )
+    ])
+
+# Callback to handle refresh button clicks
+@callback(
+    Output("member-management-refresh-trigger", "data"),
+    [Input("page-refresh-data-btn", "n_clicks")],
+    prevent_initial_call=True
+)
+def handle_refresh_button_click(n_clicks):
+    """Handle refresh button clicks by updating the refresh trigger."""
+    if n_clicks:
+        import time
+        return {"timestamp": time.time()}
+    return dash.no_update
 
 def create_group_info_card(group_data):
     """Create a card displaying group information."""

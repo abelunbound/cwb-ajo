@@ -1595,3 +1595,11 @@ def apply_message_template(payment_clicks, welcome_clicks, update_clicks):
     
     template = templates.get(triggered_id, {})
     return template.get("subject", ""), template.get("message", "")
+
+
+# ============================================================================
+# TASK 31: PAYMENT POSITION MANAGEMENT CALLBACKS
+# ============================================================================
+# NOTE: Payment position management has been moved to a dedicated page
+# at /payment-positions/<group_id> with its own callbacks in pages/payment_positions.py
+# This provides better UX with full-screen management interface.

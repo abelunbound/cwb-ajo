@@ -149,6 +149,11 @@ from components.membership_management import (
     create_member_contact_modal,
     create_group_announcement_modal
 )
+# Payment position management moved to dedicated page
+# from components.payment_position_management import (
+#     create_payment_position_modal,
+#     create_payment_schedule_modal
+# )
 from auth import USERS_DB, SESSION_TIMEOUT, validate_user
 
 
@@ -376,6 +381,7 @@ def display_page(pathname, session_data, error_data, auth_mode_data):
         # Task 30 Phase 3: Communication tools
         create_member_contact_modal(),
         create_group_announcement_modal()
+        # Task 31: Payment position management moved to dedicated page
     ])
 
 # Import callbacks after app is fully initialized

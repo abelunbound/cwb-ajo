@@ -1605,55 +1605,134 @@ def toggle_simplified_membership_modal(n_clicks_list, is_open, groups_stores):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
 
-# Separate callback for loading statistics (reduces complexity)
+# FIXED: Enhanced stats callback with group context
 @callback(
-    Output("membership-stats-overview", "children"),
-    [Input("membership-management-modal", "is_open")],
-    [State({"type": "selected-group-store", "page": ALL}, "data")],
+    [Output("membership-stats-overview", "children"),
+     Output("membership-stats-group-context", "data")],  # Hidden store for group context
+    [Input("membership-management-modal", "is_open"),
+     Input({"type": "manage-members-btn", "group_id": ALL}, "n_clicks")],
+    [State({"type": "user-groups-store", "page": ALL}, "data")],
     prevent_initial_call=True
 )
-def load_membership_stats(is_open, selected_stores):
-    """Load membership statistics separately to avoid callback complexity."""
+def load_membership_stats_fixed(is_open, manage_clicks, groups_stores):
+    """Load membership statistics with proper group context."""
     if not is_open:
-        return dash.no_update
+        return dash.no_update, dash.no_update
     
     try:
-        # ENHANCEMENT 2: Enhanced statistics with real data
+        # FIXED: Get group_id from button click values by examining the callback context properly
+        group_id = None
+        
+        # Debug logging
+        print(f"DEBUG: Stats callback triggered - is_open={is_open}")
+        print(f"DEBUG: manage_clicks={manage_clicks}")
+        
+        # FIXED: Use manage_clicks array to find which button was clicked
+        # manage_clicks corresponds to ALL buttons in the order they appear in the stores
+        print(f"DEBUG: Analyzing manage_clicks to find clicked button...")
+        
+        # Find which button was clicked by looking for non-None values
+        clicked_button_index = None
+        if manage_clicks:
+            for i, clicks in enumerate(manage_clicks):
+                if clicks is not None and clicks > 0:
+                    clicked_button_index = i
+                    print(f"DEBUG: Found clicked button at index {i} with {clicks} clicks")
+                    break
+        
+        # Map the clicked button index to the corresponding group_id from stores
+        if clicked_button_index is not None and groups_stores:
+            for store_data in groups_stores:
+                if store_data and clicked_button_index < len(store_data):
+                    group_id = store_data[clicked_button_index].get('group_id')
+                    print(f"DEBUG: Mapped button index {clicked_button_index} to group_id={group_id}")
+                    break
+        
+        # Fallback: try ctx.triggered for button clicks (in case the above fails)
+        if not group_id:
+            ctx = dash.callback_context
+            print(f"DEBUG: Fallback - checking ctx.triggered={ctx.triggered}")
+            
+            if ctx.triggered:
+                for triggered_input in ctx.triggered:
+                    prop_id = triggered_input['prop_id']
+                    print(f"DEBUG: Checking triggered input: {prop_id}")
+                    
+                    if 'manage-members-btn' in prop_id and triggered_input.get('value', 0) > 0:
+                        try:
+                            import json
+                            prop_dict = json.loads(prop_id.split('.')[0])
+                            group_id = prop_dict.get('group_id')
+                            print(f"DEBUG: Fallback extracted group_id={group_id} from button prop_id")
+                            break
+                        except Exception as e:
+                            print(f"DEBUG: Error in fallback extraction: {e}")
+                            continue
+        
+        # Last resort fallback: take first group from stores
+        if not group_id and groups_stores:
+            for store_data in groups_stores:
+                if store_data and len(store_data) > 0:
+                    group_id = store_data[0].get('group_id')
+                    print(f"DEBUG: Last resort fallback to first group: group_id={group_id}")
+                    break
+        
+        # Initialize default stats
         stats_data = {'total_members': 0, 'active_members': 0, 'pending_members': 0, 
                      'suspended_members': 0, 'admin_count': 0, 'recent_activity': 0}
         
-        # Try to get real group data from selected stores
-        if selected_stores:
-            for store_data in selected_stores:
-                if store_data:
-                    group_id = store_data.get('group_id')
-                    if group_id:
-                        try:
-                            # Try to load real member data for stats
-                            from functions.group_membership_service import get_group_members
-                            members = get_group_members(group_id, include_inactive=True)
-                            
-                            if members:
-                                stats_data['total_members'] = len(members)
-                                stats_data['active_members'] = len([m for m in members if m.get('status') == 'active'])
-                                stats_data['pending_members'] = len([m for m in members if m.get('status') == 'pending'])
-                                stats_data['suspended_members'] = len([m for m in members if m.get('status') == 'suspended'])
-                                stats_data['admin_count'] = len([m for m in members if m.get('role') == 'admin'])
-                                stats_data['recent_activity'] = len([m for m in members if 'today' in str(m.get('last_activity', '')).lower()])
-                                break
-                        except Exception as e:
-                            print(f"Error loading real stats data: {e}")
-                            # Use mock data as fallback
-                            stats_data = {'total_members': 2, 'active_members': 2, 'pending_members': 0, 
-                                        'suspended_members': 0, 'admin_count': 1, 'recent_activity': 1}
-                            break
+        # Load real data if we have group_id
+        if group_id:
+            try:
+                print(f"DEBUG: Loading stats for group_id: {group_id}")  # Debug log
+                from functions.group_membership_service import get_group_members
+                members = get_group_members(group_id, include_inactive=True)
+                
+                if members:
+                    print(f"DEBUG: Found {len(members)} members")  # Debug log
+                    stats_data['total_members'] = len(members)
+                    stats_data['active_members'] = len([m for m in members if m.get('status') == 'active'])
+                    stats_data['pending_members'] = len([m for m in members if m.get('status') == 'pending'])
+                    stats_data['suspended_members'] = len([m for m in members if m.get('status') == 'suspended'])
+                    stats_data['admin_count'] = len([m for m in members if m.get('role') == 'admin'])
+                    # Calculate recent activity based on join_date in last 30 days
+                    from datetime import datetime, timedelta
+                    thirty_days_ago = datetime.now() - timedelta(days=30)
+                    recent_count = 0
+                    for member in members:
+                        if member.get('join_date'):
+                            join_date = member['join_date']
+                            if isinstance(join_date, str):
+                                join_date = datetime.strptime(join_date, '%Y-%m-%d').date()
+                            if join_date > thirty_days_ago.date():
+                                recent_count += 1
+                    stats_data['recent_activity'] = recent_count
+                else:
+                    print("DEBUG: No members found for group")  # Debug log
+                    
+            except ImportError:
+                print("DEBUG: Warning: group_membership_service not available, using mock data")
+                # Use mock data as fallback
+                stats_data = {'total_members': 2, 'active_members': 2, 'pending_members': 0, 
+                            'suspended_members': 0, 'admin_count': 1, 'recent_activity': 1}
+            # except Exception as e:
+            #     print(f"DEBUG: Error loading real stats data: {e}")
+            #     # Use mock data as fallback
+            #     stats_data = {'total_members': 2, 'active_members': 2, 'pending_members': 0, 
+            #                 'suspended_members': 0, 'admin_count': 1, 'recent_activity': 1}
+        else:
+            print("DEBUG: No group_id available for stats")  # Debug log
         
         # Create enhanced stats component
+        print(f"DEBUG: Final stats_data: {stats_data}")
         from components.membership_management import create_member_stats_overview
-        return create_member_stats_overview(stats_data)
+        stats_component = create_member_stats_overview(stats_data)
+        
+        return stats_component, {'group_id': group_id, 'stats': stats_data}
+        
     except Exception as e:
         print(f"Error loading stats: {e}")
-        return html.Div("Stats unavailable", className="text-muted")
+        return html.Div("Stats unavailable", className="text-muted"), {}
 
 
 # Separate callback for loading activity (reduces complexity)

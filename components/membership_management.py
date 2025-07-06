@@ -1102,7 +1102,10 @@ def create_enhanced_membership_management_modal():
                     ),
                     
                     # Alerts/feedback
-                    html.Div(id="membership-alert", className="mt-3")
+                    html.Div(id="membership-alert", className="mt-3"),
+                    
+                    # Hidden store for group context (fixes stats loading)
+                    dcc.Store(id="membership-stats-group-context", data={})
                 ]
             ),
             dbc.ModalFooter(

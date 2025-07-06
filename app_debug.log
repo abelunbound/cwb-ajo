@@ -1,0 +1,42 @@
+
+Connected to database...'cwb-database'
+Your data has retrieved successfully from the SQL database...
+Data frame with length: 70 retrieved from cwb_combined_rmse...
+Your connection is closed
+
+:::::Graph Page: RMSE Data frame with length: 14 retrieved from cwb_combined_rmse
+
+
+Connected to database...'cwb-database'
+Your data has retrieved successfully from the SQL database...
+Data frame with length: 1200 retrieved from fin_history_enhanced...
+Your connection is closed
+
+:::::Graph Page: Data frame with length: 240 retrieved from fin_history_enhanced
+
+
+Connected to database...'cwb-database'
+Your data has retrieved successfully from the SQL database...
+Data frame with length: 150 retrieved from cwb_validation_forecasts...
+Your connection is closed
+
+:::::Graph Page: Data frame with length: 30 retrieved from cwb_validation_forecasts
+
+Calculating MAPE for Quartile with best RMSE:- p80: 6.33%
+Calculating Forecast Accuracy for Quartile with best RMSE:: 93.67%
+
+Connected to database...'cwb-database'
+Your data has retrieved successfully from the SQL database...
+Data frame with length: 165 retrieved from cwb_validation_assessment...
+Your connection is closed
+
+Connected to database...'cwb-database'
+Your data has retrieved successfully from the SQL database...
+Data frame with length: 280 retrieved from cwb_exchange_rate...
+Your connection is closed
+Dash is running on http://127.0.0.1:8050/
+
+ * Serving Flask app 'app'
+ * Debug mode: on
+Address already in use
+Port 8050 is in use by another program. Either identify and stop that program, or start the server with a different port.

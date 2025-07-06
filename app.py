@@ -143,7 +143,6 @@ from components.modals import (
     create_invitation_success_modal
 )
 from components.membership_management import (
-    create_enhanced_membership_management_modal,
     create_role_change_modal,
     create_remove_member_modal,
     create_member_status_change_modal,
@@ -369,8 +368,7 @@ def display_page(pathname, session_data, error_data, auth_mode_data):
         # Task 29: Invitation system modals
         create_invitation_modal(),
         create_invitation_success_modal(),
-        # Task 30: Membership management modals (enhanced)
-        create_enhanced_membership_management_modal(),
+        # Task 30: Member action modals (role change, remove, etc.)
         create_role_change_modal(),
         create_remove_member_modal(),
         # Task 30 Phase 2: Status management

@@ -136,7 +136,20 @@ import uuid
 
 # Import authentication components
 from components.login import create_login_layout
-from components.modals import create_group_modal, create_success_modal, create_invitation_modal, create_invitation_success_modal
+from components.modals import (
+    create_group_modal, 
+    create_success_modal,
+    create_invitation_modal,
+    create_invitation_success_modal
+)
+from components.membership_management import (
+    create_enhanced_membership_management_modal,
+    create_role_change_modal,
+    create_remove_member_modal,
+    create_member_status_change_modal,
+    create_member_contact_modal,
+    create_group_announcement_modal
+)
 from auth import USERS_DB, SESSION_TIMEOUT, validate_user
 
 
@@ -355,7 +368,16 @@ def display_page(pathname, session_data, error_data, auth_mode_data):
         create_success_modal(),
         # Task 29: Invitation system modals
         create_invitation_modal(),
-        create_invitation_success_modal()
+        create_invitation_success_modal(),
+        # Task 30: Membership management modals (enhanced)
+        create_enhanced_membership_management_modal(),
+        create_role_change_modal(),
+        create_remove_member_modal(),
+        # Task 30 Phase 2: Status management
+        create_member_status_change_modal(),
+        # Task 30 Phase 3: Communication tools
+        create_member_contact_modal(),
+        create_group_announcement_modal()
     ])
 
 # Import callbacks after app is fully initialized

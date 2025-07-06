@@ -173,8 +173,12 @@ def create_group_card(group_data, member_count=0):
                         className="text-end",
                         children=[
                             dbc.Button("View Details", outline=True, color="primary", className="me-2"),
-                            dbc.Button("Invite Member", color="success", size="sm", 
-                                     id={"type": "invite-member-btn", "group_id": group_data['group_id']})
+                            dbc.ButtonGroup([
+                                dbc.Button("Invite Member", color="success", size="sm", 
+                                         id={"type": "invite-member-btn", "group_id": group_data['group_id']}),
+                                dbc.Button("Manage Members", color="info", size="sm",
+                                         id={"type": "manage-members-btn", "group_id": group_data['group_id']})
+                            ], size="sm")
                         ]
                     ),
                 ]
@@ -488,8 +492,12 @@ def create_group_card_from_store(group_data):
                         className="text-end",
                         children=[
                             dbc.Button("View Details", outline=True, color="primary", className="me-2"),
-                            dbc.Button("Invite Member", color="success", size="sm", 
-                                     id={"type": "invite-member-btn", "group_id": group_data['group_id']})
+                            dbc.ButtonGroup([
+                                dbc.Button("Invite Member", color="success", size="sm", 
+                                         id={"type": "invite-member-btn", "group_id": group_data['group_id']}),
+                                dbc.Button("Manage Members", color="info", size="sm",
+                                         id={"type": "manage-members-btn", "group_id": group_data['group_id']})
+                            ], size="sm")
                         ]
                     ),
                 ]

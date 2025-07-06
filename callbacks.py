@@ -1131,3 +1131,591 @@ clientside_callback(
     [Input("copy-invitation-link-btn", "n_clicks")],
     prevent_initial_call=True
 )
+
+# ============================================
+# TASK 30: MEMBERSHIP MANAGEMENT CALLBACKS
+# ============================================
+
+# Removed duplicate callback - functionality consolidated into toggle_enhanced_membership_modal
+
+
+@callback(
+    Output("membership-management-modal", "is_open", allow_duplicate=True),
+    [Input("membership-modal-close", "n_clicks"),
+     Input("membership-refresh-btn", "n_clicks")],
+    [State("membership-management-modal", "is_open")],
+    prevent_initial_call=True
+)
+def close_membership_modal(close_clicks, refresh_clicks, is_open):
+    """Close membership modal or refresh data."""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update
+    
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    
+    if triggered_id == "membership-modal-close":
+        return False
+    elif triggered_id == "membership-refresh-btn":
+        # For refresh, we'll trigger a re-render by keeping modal open
+        return is_open
+    
+    return dash.no_update
+
+
+@callback(
+    [Output("role-change-modal", "is_open"),
+     Output("role-change-member-name", "children"),
+     Output("role-change-current-role", "children"),
+     Output("role-change-dropdown", "value")],
+    [Input({"type": "change-role-btn", "member_id": ALL}, "n_clicks")],
+    [State("role-change-modal", "is_open")],
+    prevent_initial_call=True
+)
+def toggle_role_change_modal(n_clicks_list, is_open):
+    """Toggle role change modal."""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+    
+    triggered_value = ctx.triggered[0]['value']
+    if not triggered_value or triggered_value <= 0:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+    
+    # Extract member_id from triggered component
+    import json
+    triggered_prop_id = ctx.triggered[0]['prop_id']
+    prop_dict = json.loads(triggered_prop_id.split('.')[0])
+    member_id = prop_dict.get('member_id')
+    
+    if not member_id:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+    
+    # Get member info (for now, we'll use placeholder data)
+    # In a real implementation, you'd fetch this from the database
+    member_name = f"Member: User ID {member_id}"
+    current_role = "Current role: Loading..."
+    
+    return True, member_name, current_role, None
+
+
+@callback(
+    Output("role-change-modal", "is_open", allow_duplicate=True),
+    [Input("role-change-cancel", "n_clicks"),
+     Input("role-change-confirm", "n_clicks")],
+    [State("role-change-modal", "is_open"),
+     State("role-change-dropdown", "value")],
+    prevent_initial_call=True
+)
+def handle_role_change(cancel_clicks, confirm_clicks, is_open, new_role):
+    """Handle role change confirmation or cancellation."""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update
+    
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    
+    if triggered_id == "role-change-cancel":
+        return False
+    elif triggered_id == "role-change-confirm":
+        if new_role:
+            # Here you would implement the actual role change logic
+            print(f"Would change role to: {new_role}")
+            return False
+        else:
+            # Don't close if no role selected
+            return is_open
+    
+    return dash.no_update
+
+
+@callback(
+    [Output("remove-member-modal", "is_open"),
+     Output("remove-member-name", "children"),
+     Output("remove-member-role", "children")],
+    [Input({"type": "remove-member-btn", "member_id": ALL}, "n_clicks")],
+    [State("remove-member-modal", "is_open")],
+    prevent_initial_call=True
+)
+def toggle_remove_member_modal(n_clicks_list, is_open):
+    """Toggle remove member modal."""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update, dash.no_update
+    
+    triggered_value = ctx.triggered[0]['value']
+    if not triggered_value or triggered_value <= 0:
+        return dash.no_update, dash.no_update, dash.no_update
+    
+    # Extract member_id from triggered component
+    import json
+    triggered_prop_id = ctx.triggered[0]['prop_id']
+    prop_dict = json.loads(triggered_prop_id.split('.')[0])
+    member_id = prop_dict.get('member_id')
+    
+    if not member_id:
+        return dash.no_update, dash.no_update, dash.no_update
+    
+    # Get member info (placeholder for now)
+    member_name = f"Member: User ID {member_id}"
+    member_role = "Role: Loading..."
+    
+    return True, member_name, member_role
+
+
+@callback(
+    Output("remove-member-modal", "is_open", allow_duplicate=True),
+    [Input("remove-member-cancel", "n_clicks"),
+     Input("remove-member-confirm", "n_clicks")],
+    [State("remove-member-modal", "is_open")],
+    prevent_initial_call=True
+)
+def handle_remove_member(cancel_clicks, confirm_clicks, is_open):
+    """Handle member removal confirmation or cancellation."""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update
+    
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    
+    if triggered_id == "remove-member-cancel":
+        return False
+    elif triggered_id == "remove-member-confirm":
+        # Here you would implement the actual member removal logic
+        print("Would remove member")
+        return False
+    
+    return dash.no_update
+
+# ============================================
+# TASK 30 PHASE 2: STATUS MANAGEMENT CALLBACKS
+# ============================================
+
+@callback(
+    [Output("member-status-change-modal", "is_open"),
+     Output("status-change-member-name", "children"),
+     Output("status-change-current-status", "children"),
+     Output("status-change-dropdown", "value")],
+    [Input({"type": "change-status-btn", "member_id": ALL}, "n_clicks")],
+    [State("member-status-change-modal", "is_open")],
+    prevent_initial_call=True
+)
+def toggle_status_change_modal(n_clicks_list, is_open):
+    """Toggle member status change modal."""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+    
+    triggered_value = ctx.triggered[0]['value']
+    if not triggered_value or triggered_value <= 0:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+    
+    # Extract member_id from triggered component
+    import json
+    triggered_prop_id = ctx.triggered[0]['prop_id']
+    prop_dict = json.loads(triggered_prop_id.split('.')[0])
+    member_id = prop_dict.get('member_id')
+    
+    if not member_id:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+    
+    # Get member info (placeholder for now)
+    member_name = f"Member: User ID {member_id}"
+    current_status = "Current status: Loading..."
+    
+    return True, member_name, current_status, None
+
+
+@callback(
+    Output("member-status-change-modal", "is_open", allow_duplicate=True),
+    [Input("status-change-cancel", "n_clicks"),
+     Input("status-change-confirm", "n_clicks")],
+    [State("member-status-change-modal", "is_open"),
+     State("status-change-dropdown", "value"),
+     State("status-change-reason", "value")],
+    prevent_initial_call=True
+)
+def handle_status_change(cancel_clicks, confirm_clicks, is_open, new_status, reason):
+    """Handle member status change confirmation or cancellation."""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update
+    
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    
+    if triggered_id == "status-change-cancel":
+        return False
+    elif triggered_id == "status-change-confirm":
+        if new_status:
+            # Here you would implement the actual status change logic
+            print(f"Would change status to: {new_status} with reason: {reason}")
+            return False
+        else:
+            # Don't close if no status selected
+            return is_open
+    
+    return dash.no_update
+
+
+# ============================================
+# TASK 30 PHASE 3: COMMUNICATION CALLBACKS
+# ============================================
+
+@callback(
+    [Output("member-contact-modal", "is_open"),
+     Output("contact-member-name", "children"),
+     Output("contact-member-email", "children")],
+    [Input({"type": "contact-member-btn", "member_id": ALL}, "n_clicks"),
+     Input({"type": "contact-member-link", "member_id": ALL}, "n_clicks")],
+    [State("member-contact-modal", "is_open")],
+    prevent_initial_call=True
+)
+def toggle_contact_modal(contact_btn_clicks, contact_link_clicks, is_open):
+    """Toggle member contact modal."""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update, dash.no_update
+    
+    triggered_value = ctx.triggered[0]['value']
+    if not triggered_value or triggered_value <= 0:
+        return dash.no_update, dash.no_update, dash.no_update
+    
+    # Extract member_id from triggered component
+    import json
+    triggered_prop_id = ctx.triggered[0]['prop_id']
+    prop_dict = json.loads(triggered_prop_id.split('.')[0])
+    member_id = prop_dict.get('member_id')
+    
+    if not member_id:
+        return dash.no_update, dash.no_update, dash.no_update
+    
+    # Get member info (placeholder for now)
+    member_name = f"Member: User ID {member_id}"
+    member_email = f"Email: user{member_id}@example.com"
+    
+    return True, member_name, member_email
+
+
+@callback(
+    Output("member-contact-modal", "is_open", allow_duplicate=True),
+    [Input("contact-cancel", "n_clicks"),
+     Input("contact-send", "n_clicks")],
+    [State("member-contact-modal", "is_open"),
+     State("contact-subject", "value"),
+     State("contact-message", "value")],
+    prevent_initial_call=True
+)
+def handle_contact_member(cancel_clicks, send_clicks, is_open, subject, message):
+    """Handle member contact form submission or cancellation."""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update
+    
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    
+    if triggered_id == "contact-cancel":
+        return False
+    elif triggered_id == "contact-send":
+        if subject and message:
+            # Here you would implement the actual message sending logic
+            print(f"Would send message - Subject: {subject}, Message: {message}")
+            return False
+        else:
+            # Don't close if required fields are empty
+            return is_open
+    
+    return dash.no_update
+
+
+@callback(
+    [Output("group-announcement-modal", "is_open"),
+     Output("announcement-group-name", "children"),
+     Output("announcement-recipients", "children")],
+    [Input("send-announcement-btn", "n_clicks")],
+    [State("group-announcement-modal", "is_open"),
+     State({"type": "selected-group-store", "page": ALL}, "data")],
+    prevent_initial_call=True
+)
+def toggle_announcement_modal(n_clicks, is_open, selected_stores):
+    """Toggle group announcement modal."""
+    if not n_clicks or n_clicks <= 0:
+        return dash.no_update, dash.no_update, dash.no_update
+    
+    # Get group info from store
+    group_name = "Group: Loading..."
+    recipients = "Recipients: Loading..."
+    
+    for store_data in selected_stores:
+        if store_data:
+            group_name = f"Group: {store_data.get('group_name', 'Unknown')}"
+            member_count = store_data.get('current_members', 0)
+            recipients = f"Recipients: {member_count} members"
+            break
+    
+    return True, group_name, recipients
+
+
+@callback(
+    Output("group-announcement-modal", "is_open", allow_duplicate=True),
+    [Input("announcement-cancel", "n_clicks"),
+     Input("announcement-send", "n_clicks")],
+    [State("group-announcement-modal", "is_open"),
+     State("announcement-title", "value"),
+     State("announcement-message", "value"),
+     State("announcement-recipients-checklist", "value"),
+     State("announcement-priority", "value")],
+    prevent_initial_call=True
+)
+def handle_group_announcement(cancel_clicks, send_clicks, is_open, title, message, recipients, priority):
+    """Handle group announcement sending or cancellation."""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update
+    
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    
+    if triggered_id == "announcement-cancel":
+        return False
+    elif triggered_id == "announcement-send":
+        if title and message and recipients:
+            # Here you would implement the actual announcement sending logic
+            print(f"Would send announcement - Title: {title}, Recipients: {recipients}, Priority: {priority}")
+            return False
+        else:
+            # Don't close if required fields are empty
+            return is_open
+    
+    return dash.no_update
+
+
+# OPTION 1: Simplified callback architecture to fix overlap errors
+# Main callback - handles core modal functionality only
+@callback(
+    [Output("membership-management-modal", "is_open", allow_duplicate=True),
+     Output("membership-group-name", "children", allow_duplicate=True),
+     Output("membership-group-details", "children", allow_duplicate=True),
+     Output("membership-member-list", "children", allow_duplicate=True)],
+    [Input({"type": "manage-members-btn", "group_id": ALL}, "n_clicks")],
+    [State("membership-management-modal", "is_open"),
+     State({"type": "user-groups-store", "page": ALL}, "data")],
+    prevent_initial_call=True
+)
+def toggle_simplified_membership_modal(n_clicks_list, is_open, groups_stores):
+    """Simplified membership management modal - core functionality only."""
+    try:
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        
+        triggered_prop_id = ctx.triggered[0]['prop_id']
+        triggered_value = ctx.triggered[0]['value']
+        
+        # Check if this is a real button click
+        if not triggered_value or triggered_value <= 0:
+            return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        
+        # Extract group_id from the triggered component
+        import json
+        prop_dict = json.loads(triggered_prop_id.split('.')[0])
+        group_id = prop_dict.get('group_id')
+        
+        if not group_id:
+            return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        
+        # Find group data from any available store
+        group_data = None
+        for store_data in groups_stores:
+            if store_data:
+                for group in store_data:
+                    if group.get('group_id') == group_id:
+                        group_data = group
+                        break
+                if group_data:
+                    break
+        
+        if not group_data:
+            return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        
+        # ENHANCEMENT 1: Add actual member loading with error handling
+        try:
+            # Try to load real member data
+            from functions.group_membership_service import get_group_members
+            members = get_group_members(group_id, include_inactive=True)
+            
+            # Format member data
+            formatted_members = []
+            if members:
+                for member in members:
+                    formatted_members.append({
+                        'id': member.get('user_id'),
+                        'full_name': member.get('full_name', 'Unknown'),
+                        'email': member.get('email', ''),
+                        'role': member.get('role', 'member'),
+                        'status': member.get('status', 'active'),
+                        'payment_position': member.get('payment_position'),
+                        'join_date': member.get('join_date', 'Unknown')
+                    })
+            
+            # Create member list component
+            from components.membership_management import create_member_list
+            member_list_component = create_member_list(formatted_members)
+            
+        except ImportError:
+            # Fallback to mock data if service not available
+            print("Warning: Using mock member data")
+            mock_members = [
+                {
+                    'id': 1,
+                    'full_name': 'John Doe',
+                    'email': 'john@example.com',
+                    'role': 'admin',
+                    'status': 'active',
+                    'payment_position': 1,
+                    'join_date': 'Jan 2024'
+                },
+                {
+                    'id': 2,
+                    'full_name': 'Jane Smith',
+                    'email': 'jane@example.com',
+                    'role': 'member',
+                    'status': 'active',
+                    'payment_position': 2,
+                    'join_date': 'Feb 2024'
+                }
+            ]
+            from components.membership_management import create_member_list
+            member_list_component = create_member_list(mock_members)
+            
+        except Exception as e:
+            print(f"Error loading members: {e}")
+            # Fallback to loading spinner
+            member_list_component = html.Div([
+                html.P("Loading member data...", className="text-muted"),
+                dbc.Spinner(color="primary", size="sm")
+            ])
+        
+        # Group info
+        group_name = f"Group: {group_data.get('group_name', 'Unknown')}"
+        group_details = f"{group_data.get('current_members', 0)} members • {group_data.get('group_status', 'unknown').title()}"
+        
+        return True, group_name, group_details, member_list_component
+        
+    except Exception as e:
+        print(f"Error in simplified membership modal: {e}")
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+
+# Separate callback for loading statistics (reduces complexity)
+@callback(
+    Output("membership-stats-overview", "children"),
+    [Input("membership-management-modal", "is_open")],
+    [State({"type": "selected-group-store", "page": ALL}, "data")],
+    prevent_initial_call=True
+)
+def load_membership_stats(is_open, selected_stores):
+    """Load membership statistics separately to avoid callback complexity."""
+    if not is_open:
+        return dash.no_update
+    
+    try:
+        # ENHANCEMENT 2: Enhanced statistics with real data
+        stats_data = {'total_members': 0, 'active_members': 0, 'pending_members': 0, 
+                     'suspended_members': 0, 'admin_count': 0, 'recent_activity': 0}
+        
+        # Try to get real group data from selected stores
+        if selected_stores:
+            for store_data in selected_stores:
+                if store_data:
+                    group_id = store_data.get('group_id')
+                    if group_id:
+                        try:
+                            # Try to load real member data for stats
+                            from functions.group_membership_service import get_group_members
+                            members = get_group_members(group_id, include_inactive=True)
+                            
+                            if members:
+                                stats_data['total_members'] = len(members)
+                                stats_data['active_members'] = len([m for m in members if m.get('status') == 'active'])
+                                stats_data['pending_members'] = len([m for m in members if m.get('status') == 'pending'])
+                                stats_data['suspended_members'] = len([m for m in members if m.get('status') == 'suspended'])
+                                stats_data['admin_count'] = len([m for m in members if m.get('role') == 'admin'])
+                                stats_data['recent_activity'] = len([m for m in members if 'today' in str(m.get('last_activity', '')).lower()])
+                                break
+                        except Exception as e:
+                            print(f"Error loading real stats data: {e}")
+                            # Use mock data as fallback
+                            stats_data = {'total_members': 2, 'active_members': 2, 'pending_members': 0, 
+                                        'suspended_members': 0, 'admin_count': 1, 'recent_activity': 1}
+                            break
+        
+        # Create enhanced stats component
+        from components.membership_management import create_member_stats_overview
+        return create_member_stats_overview(stats_data)
+    except Exception as e:
+        print(f"Error loading stats: {e}")
+        return html.Div("Stats unavailable", className="text-muted")
+
+
+# Separate callback for loading activity (reduces complexity)
+@callback(
+    Output("membership-activity-list", "children"),
+    [Input("membership-management-modal", "is_open")],
+    prevent_initial_call=True
+)
+def load_membership_activity(is_open):
+    """Load membership activity separately to avoid callback complexity."""
+    if not is_open:
+        return dash.no_update
+    
+    try:
+        return html.Div([
+            html.Div([
+                html.I(className="fas fa-user-plus text-success me-2"),
+                html.Span("John Doe joined the group", className="me-2"),
+                html.Small("2 hours ago", className="text-muted")
+            ], className="d-flex align-items-center mb-2"),
+            html.Div([
+                html.I(className="fas fa-dollar-sign text-primary me-2"),
+                html.Span("Jane Smith made payment", className="me-2"),
+                html.Small("1 day ago", className="text-muted")
+            ], className="d-flex align-items-center mb-2")
+        ])
+    except Exception as e:
+        print(f"Error loading activity: {e}")
+        return html.Div("Activity unavailable", className="text-muted")
+
+
+# Template buttons for quick messages
+@callback(
+    [Output("contact-subject", "value"),
+     Output("contact-message", "value")],
+    [Input("template-payment-reminder", "n_clicks"),
+     Input("template-welcome", "n_clicks"),
+     Input("template-update", "n_clicks")],
+    prevent_initial_call=True
+)
+def apply_message_template(payment_clicks, welcome_clicks, update_clicks):
+    """Apply quick message templates."""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return dash.no_update, dash.no_update
+    
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    
+    templates = {
+        "template-payment-reminder": {
+            "subject": "Monthly Contribution Reminder",
+            "message": "Hi! This is a friendly reminder that your monthly contribution is due. Please make your payment at your earliest convenience. Thank you!"
+        },
+        "template-welcome": {
+            "subject": "Welcome to the Group!",
+            "message": "Welcome to our Ajo savings group! We're excited to have you join us. Please let us know if you have any questions about the group or contribution schedule."
+        },
+        "template-update": {
+            "subject": "Group Update",
+            "message": "Hello everyone! I wanted to share an important update about our group. Please review the information and let us know if you have any questions."
+        }
+    }
+    
+    template = templates.get(triggered_id, {})
+    return template.get("subject", ""), template.get("message", "")
